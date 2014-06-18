@@ -1,15 +1,14 @@
 ﻿using Lawson.M3.MvxSock;
-using MyClassLibrary.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 
 namespace M3ApiClientInterface
 {
-    public abstract class DataObjectDictionaryReaderProcessBase<T_Key, T_DataObject, T_DataObjectDictionary, T_LogWriter>
-        : ReaderProcessBase<T_LogWriter>
+    public abstract class DataObjectDictionaryReaderProcessBase<T_Key, T_DataObject, T_DataObjectDictionary>
+        : ReaderProcessBase
         where T_DataObjectDictionary : System.Collections.Generic.IDictionary<T_Key, T_DataObject>, new()
-        where T_LogWriter : MyClassLibrary.Logging.ILogWriter, new ()
     {
         //FIELDS
         protected T_DataObjectDictionary dataObjectDictionary;
@@ -64,7 +63,7 @@ namespace M3ApiClientInterface
             }
             catch (Exception exception)
             {
-                LoggingUtilities.WriteLogEntry<T_LogWriter>(exception);
+                Trace.WriteLine(exception);
 
                 return false;
             }

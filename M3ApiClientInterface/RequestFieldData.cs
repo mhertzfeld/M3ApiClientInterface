@@ -1,5 +1,4 @@
-﻿using MyClassLibrary;
-using System;
+﻿using System;
 
 
 namespace M3ApiClientInterface

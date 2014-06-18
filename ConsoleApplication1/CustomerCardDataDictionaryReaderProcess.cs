@@ -5,7 +5,7 @@ using System;
 namespace ConsoleApplication1
 {
     internal class CustomerCardDataDictionaryReaderProcess
-        : M3ApiClientInterface.DataObjectDictionaryReaderProcessBase<String, CustomerCardData, System.Collections.Generic.Dictionary<String, CustomerCardData>, LogWriter>
+        : M3ApiClientInterface.DataObjectDictionaryReaderProcessBase<String, CustomerCardData, System.Collections.Generic.Dictionary<String, CustomerCardData>>
     {
         protected override void AddDataObjectToDataObjectDictionary(CustomerCardData dataObject)
         {

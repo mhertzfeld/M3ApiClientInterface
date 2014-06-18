@@ -1,16 +1,13 @@
 ﻿using Lawson.M3.MvxSock;
-using MyClassLibrary;
-using MyClassLibrary.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 
 namespace M3ApiClientInterface
 {
-    public abstract class ReaderProcessBase<T_LogWriter>
-        : MyClassLibrary.Process.ProcessWorkerBase
-        where T_LogWriter : MyClassLibrary.Logging.ILogWriter, new()
+    public abstract class ReaderProcessBase
     {
         //FIELDS
         protected ApiData apiData;
@@ -23,7 +20,7 @@ namespace M3ApiClientInterface
 
         protected RequestFieldDataList requestFieldDataList;
 
-        protected UInt32 returnCode;
+        protected UInt32? returnCode;
 
         protected SERVER_ID serverId;
 
@@ -88,7 +85,7 @@ namespace M3ApiClientInterface
             }
         }
 
-        public virtual UInt32 ReturnCode
+        public virtual UInt32? ReturnCode
         {
             get { return returnCode; }
 
@@ -107,16 +104,16 @@ namespace M3ApiClientInterface
 
             maximumRecordsToReturn = 0;
 
-            requestFieldDataList = null;
+            requestFieldDataList = new M3ApiClientInterface.RequestFieldDataList();
 
-            returnCode = 0;
+            returnCode = null;
 
             serverId = default(SERVER_ID);
         }
 
 
         //METHODS
-        public override bool ProcessExecution()
+        public virtual Boolean ProcessExecution()
         {
             if (ApiData == null)
             { throw new NullReferenceException("ApiData"); }
@@ -132,6 +129,8 @@ namespace M3ApiClientInterface
 
             if (!ValidateInputs())
             { return false; }
+
+            ResetProcess();
 
             serverId = new SERVER_ID();
 
@@ -193,19 +192,6 @@ namespace M3ApiClientInterface
 
             return ProcessExecution();
         }
-
-        public virtual void RunWorker(ConnectionData ConnectionData, ApiData ApiData, RequestFieldDataList RequestFieldDataList, Int64 MaximumRecordsToReturn = 0)
-        {
-            this.ApiData = ApiData;
-
-            this.ConnectionData = ConnectionData;
-
-            this.MaximumRecordsToReturn = MaximumRecordsToReturn;
-
-            this.RequestFieldDataList = RequestFieldDataList;
-
-            RunWorker();
-        }
         
 
         //FUNCTIONS
@@ -213,18 +199,25 @@ namespace M3ApiClientInterface
         {
             try
             {
-                MvxSock.Close(ref serverId);
+                ReturnCode = MvxSock.Close(ref serverId);
             }
             catch (Exception exception)
             {
-                LoggingUtilities.WriteLogEntry<T_LogWriter>(exception);
+                Trace.WriteLine(exception);
 
-                ReturnCode = 0;
+                ReturnCode = null;
 
                 return false;
             }
 
-            return (ReturnCode == 0);
+            if (ReturnCode != 0)
+            {
+                Trace.WriteLine("The 'MvxSock.Close' method retured the following non zero code.  " + ReturnCode);
+
+                return false;
+            }
+
+            return true;
         }
 
         protected virtual Boolean ConnectToServer()
@@ -235,14 +228,21 @@ namespace M3ApiClientInterface
             }
             catch (Exception exception)
             {
-                LoggingUtilities.WriteLogEntry<T_LogWriter>(exception);
+                Trace.WriteLine(exception);
 
-                ReturnCode = 0;
+                ReturnCode = null;
 
                 return false;
             }
 
-            return (ReturnCode == 0);
+            if (ReturnCode != 0)
+            {
+                Trace.WriteLine("The 'MvxSock.Connect' method retured the following non zero code.  " + ReturnCode);
+
+                return false;
+            }
+
+            return true;
         }
 
         protected virtual Boolean ExecuteApi()
@@ -253,14 +253,21 @@ namespace M3ApiClientInterface
             }
             catch (Exception exception)
             {
-                LoggingUtilities.WriteLogEntry<T_LogWriter>(exception);
+                Trace.WriteLine(exception);
 
-                ReturnCode = 0;
+                ReturnCode = null;
 
                 return false;
             }
 
-            return (ReturnCode == 0);
+            if (ReturnCode != 0)
+            {
+                Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
+
+                return false;
+            }
+
+            return true;
         }
 
         protected virtual String GetValueFromField(String fieldName)
@@ -270,10 +277,8 @@ namespace M3ApiClientInterface
 
         protected abstract Boolean ProcessApiResults();
 
-        protected override void ResetProcess()
+        protected virtual void ResetProcess()
         {
-            base.ResetProcess();
-
             serverId = default(SERVER_ID);
         }
 
@@ -285,9 +290,16 @@ namespace M3ApiClientInterface
             }
             catch (Exception exception)
             {
-                LoggingUtilities.WriteLogEntry<T_LogWriter>(exception);
+                Trace.WriteLine(exception);
 
-                ReturnCode = 0;
+                ReturnCode = null;
+
+                return false;
+            }
+
+            if (ReturnCode != 0)
+            {
+                Trace.WriteLine("The 'MvxSock.SetZippedTransactions' method retured the following non zero code.  " + ReturnCode);
 
                 return false;
             }
@@ -307,32 +319,39 @@ namespace M3ApiClientInterface
             }
             catch (Exception exception)
             {
-                LoggingUtilities.WriteLogEntry<T_LogWriter>(exception);
+                Trace.WriteLine(exception);
 
-                ReturnCode = 0;
+                ReturnCode = null;
 
                 return false;
             }
 
-            return (ReturnCode == 0);
+            if (ReturnCode != 0)
+            {
+                Trace.WriteLine("The 'MvxSock.Trans' method retured the following non zero code.  " + ReturnCode);
+
+                return false;
+            }
+
+            return true;
         }
 
         protected virtual Boolean SetRequestField(RequestFieldData requestFieldData)
         {
+            ReturnCode = null;
+
             try
             {
                 MvxSock.SetField(ref serverId, requestFieldData.FieldName, requestFieldData.FieldValue);
             }
             catch (Exception exception)
             {
-                LoggingUtilities.WriteLogEntry<T_LogWriter>(exception);
-
-                ReturnCode = 0;
+                Trace.WriteLine(exception);
 
                 return false;
             }
 
-            return (ReturnCode == 0);
+            return true;
         }
 
         protected virtual Boolean SetRequestFields()
@@ -348,23 +367,47 @@ namespace M3ApiClientInterface
 
         protected virtual Boolean ValidateInputs()
         {
-            if ((ApiData.Api == null) || (ApiData.Api.Length != 8))
-            { return false; }
+            if ((ApiData.Api == null) || (ApiData.Api.Length < 8))
+            {
+                Trace.WriteLine("'ApiData.Api' has failed validation.");
+
+                return false; 
+            }
 
             if ((ApiData.Method == null) || (ApiData.Method.Length == 0))
-            { return false; }
+            {
+                Trace.WriteLine("'ApiData.Method' has failed validation.");
+
+                return false; 
+            }
 
             if (ConnectionData.Password == null)
-            { return false; }
+            {
+                Trace.WriteLine("'ConnectionData.Password' has failed validation.");
+
+                return false;
+            }
 
             if (ConnectionData.Port < 1)
-            { return false; }
+            {
+                Trace.WriteLine("'ConnectionData.Port' has failed validation.");
+
+                return false;
+            }
 
             if ((ConnectionData.Server == null) || (ConnectionData.Server.Length == 0))
-            { return false; }
+            {
+                Trace.WriteLine("'ConnectionData.Server' has failed validation.");
+
+                return false;
+            }
 
             if ((ConnectionData.UserName == null) || (ConnectionData.UserName.Length == 0))
-            { return false; }
+            {
+                Trace.WriteLine("'ConnectionData.UserName' has failed validation.");
+
+                return false;
+            }
 
             return true;
         }

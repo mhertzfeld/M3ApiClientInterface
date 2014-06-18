@@ -4,7 +4,7 @@
 namespace ConsoleApplication1
 {
     internal class CustomerDataReaderProcess
-        : M3ApiClientInterface.DataObjectReaderProcessBase<CustomerData, LogWriter>
+        : M3ApiClientInterface.DataObjectReaderProcessBase<CustomerData>
     {
         //FUNCTIONS
         protected override CustomerData CreateDataObject()
