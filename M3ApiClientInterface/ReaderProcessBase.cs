@@ -113,19 +113,19 @@ namespace M3ApiClientInterface
 
 
         //METHODS
-        public virtual Boolean ProcessExecution()
+        public virtual Boolean ExecuteProcess()
         {
             if (ApiData == null)
-            { throw new NullReferenceException("ApiData"); }
-
+            { throw new InvalidOperationException("ApiData can not be null."); }
+            
             if (ConnectionData == null)
-            { throw new NullReferenceException("ConnectionData"); }
+            { throw new InvalidOperationException("ConnectionData can not be null."); }
 
             if (MaximumRecordsToReturn < 0)
-            { throw new ValueOutOfRangeException("MaximumRecordsToReturn"); }
+            { throw new InvalidOperationException("MaximumRecordsToReturn is out of range."); }
             
             if (RequestFieldDataList == null)
-            { throw new NullReferenceException("RequestFieldDataList"); }
+            { throw new InvalidOperationException("RequestFieldDataList can not be null."); }
 
             if (!ValidateInputs())
             { return false; }
@@ -180,7 +180,7 @@ namespace M3ApiClientInterface
             return true;
         }
 
-        public virtual Boolean ProcessExecution(ConnectionData ConnectionData, ApiData ApiData, RequestFieldDataList RequestFieldDataList, Int64 MaximumRecordsToReturn = 0)
+        public virtual Boolean ExecuteProcess(ConnectionData ConnectionData, ApiData ApiData, RequestFieldDataList RequestFieldDataList, Int64 MaximumRecordsToReturn = 0)
         {
             this.ApiData = ApiData;
 
@@ -190,7 +190,7 @@ namespace M3ApiClientInterface
 
             this.RequestFieldDataList = RequestFieldDataList;
 
-            return ProcessExecution();
+            return ExecuteProcess();
         }
         
 
@@ -312,7 +312,7 @@ namespace M3ApiClientInterface
             StringBuilder stringBuilder = new StringBuilder();
 
             UInt32 test = 128;
-
+            
             try
             {
                 ReturnCode = MvxSock.Trans(ref serverId, "SetLstMaxRec   0", stringBuilder, ref test);

@@ -24,11 +24,11 @@ namespace ConsoleApplication1
 
 
         //METHODS
-        public override bool ProcessExecution()
+        public override bool ExecuteProcess()
         {
             RequestFieldDataList = new M3ApiClientInterface.RequestFieldDataList();
 
-            return base.ProcessExecution();
+            return base.ExecuteProcess();
         }
 
 
@@ -57,7 +57,7 @@ namespace ConsoleApplication1
         {
             WarehouseTableDataListReaderProcess warehouseTableDataListReaderProcess = new WarehouseTableDataListReaderProcess();
 
-            if (warehouseTableDataListReaderProcess.ProcessExecution())
+            if (warehouseTableDataListReaderProcess.ExecuteProcess())
             {
                 warehouseTableDataList = warehouseTableDataListReaderProcess.DataObjectCollection;
 

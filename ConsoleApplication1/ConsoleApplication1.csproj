@@ -53,7 +53,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="MyClassLibrary">
-      <HintPath>..\..\..\Library\MyClassLibrary\0.5.0.0\MyClassLibrary.dll</HintPath>
+      <HintPath>..\..\..\Library\MyClassLibrary\0.7.0.0\MyClassLibrary.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />

@@ -26,7 +26,7 @@ namespace ConsoleApplication1
             M3ApiClientInterface.ApiData customerDataListReaderApiData = new M3ApiClientInterface.ApiData("CRS610MI", "LstByNumber");
 
             CustomerDataListReaderProcess customerDataListReaderProcess = new CustomerDataListReaderProcess();
-            if (customerDataListReaderProcess.ProcessExecution(connectionData, customerDataListReaderApiData, new M3ApiClientInterface.RequestFieldDataList()))
+            if (customerDataListReaderProcess.ExecuteProcess(connectionData, customerDataListReaderApiData, new M3ApiClientInterface.RequestFieldDataList()))
             { Console.WriteLine("CustomerDataListReaderProcess PASS"); }
             else
             { Console.WriteLine("CustomerDataListReaderProcess FAIL"); }
@@ -38,14 +38,14 @@ namespace ConsoleApplication1
             requestFieldDataList.Add(new M3ApiClientInterface.RequestFieldData("CUNO", "8888"));
 
             CustomerDataReaderProcess customerDataReaderProcess = new CustomerDataReaderProcess();
-            if (customerDataReaderProcess.ProcessExecution(connectionData, customerDataReaderApiData, requestFieldDataList))
+            if (customerDataReaderProcess.ExecuteProcess(connectionData, customerDataReaderApiData, requestFieldDataList))
             { Console.WriteLine("CustomerDataReaderProcess PASS"); }
             else
             { Console.WriteLine("CustomerDataReaderProcess FAIL"); }
 
             WarehouseTableDataListReaderProcess warehouseTableDataListReaderProcess = new WarehouseTableDataListReaderProcess();
 
-            if (warehouseTableDataListReaderProcess.ProcessExecution())
+            if (warehouseTableDataListReaderProcess.ExecuteProcess())
             { Console.WriteLine("WarehouseTableDataListReaderProcess PASS"); }
             else
             { Console.WriteLine("WarehouseTableDataListReaderProcess FAIL"); }
