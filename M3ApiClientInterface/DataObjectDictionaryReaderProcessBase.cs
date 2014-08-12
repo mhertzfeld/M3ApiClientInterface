@@ -30,6 +30,15 @@ namespace M3ApiClientInterface
         }
 
 
+        //METHODS
+        public override bool ExecuteProcess()
+        {
+            DataObjectDictionary = default(T_DataObjectDictionary);
+
+            return base.ExecuteProcess();
+        }
+
+
         //FUNCTIONS
         protected abstract void AddDataObjectToDataObjectDictionary(T_DataObject dataObject);
 
@@ -58,7 +67,15 @@ namespace M3ApiClientInterface
                     ReturnCode = MvxSock.Access(ref serverId, null);
 
                     if (ReturnCode != 0)
-                    { return false; }
+                    {
+                        Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
+
+                        String errorText = GetErrorText();
+
+                        Trace.WriteLineIf((errorText != null), errorText);
+
+                        return false;
+                    }
                 }
             }
             catch (Exception exception)
@@ -69,13 +86,6 @@ namespace M3ApiClientInterface
             }
 
             return true;
-        }
-
-        protected override void ResetProcess()
-        {
-            base.ResetProcess();
-
-            DataObjectDictionary = default(T_DataObjectDictionary);
         }
     }
 }

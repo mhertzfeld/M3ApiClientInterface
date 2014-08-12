@@ -130,8 +130,6 @@ namespace M3ApiClientInterface
             if (!ValidateInputs())
             { return false; }
 
-            ResetProcess();
-
             serverId = new SERVER_ID();
 
             if (!ConnectToServer())
@@ -239,6 +237,10 @@ namespace M3ApiClientInterface
             {
                 Trace.WriteLine("The 'MvxSock.Connect' method retured the following non zero code.  " + ReturnCode);
 
+                String errorText = GetErrorText();
+
+                Trace.WriteLineIf((errorText != null), errorText);
+
                 return false;
             }
 
@@ -264,10 +266,32 @@ namespace M3ApiClientInterface
             {
                 Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
 
+                String errorText = GetErrorText();
+
+                Trace.WriteLineIf((errorText != null), errorText);
+
                 return false;
             }
 
             return true;
+        }
+
+        protected virtual String GetErrorText()
+        {
+            String errorText;
+
+            try
+            {
+                errorText = Lawson.M3.MvxSock.MvxSock.GetLastError(ref serverId).Trim();
+            }
+            catch(Exception exception)
+            {
+                Trace.Write(exception);
+
+                return null;
+            }
+
+            return (errorText.Length == 0 ? null : errorText);
         }
 
         protected virtual String GetValueFromField(String fieldName)
@@ -276,11 +300,6 @@ namespace M3ApiClientInterface
         }
 
         protected abstract Boolean ProcessApiResults();
-
-        protected virtual void ResetProcess()
-        {
-            serverId = default(SERVER_ID);
-        }
 
         protected virtual Boolean SetEnableZippedTransactions()
         {
@@ -300,6 +319,10 @@ namespace M3ApiClientInterface
             if (ReturnCode != 0)
             {
                 Trace.WriteLine("The 'MvxSock.SetZippedTransactions' method retured the following non zero code.  " + ReturnCode);
+
+                String errorText = GetErrorText();
+
+                Trace.WriteLineIf((errorText != null), errorText);
 
                 return false;
             }
@@ -329,6 +352,10 @@ namespace M3ApiClientInterface
             if (ReturnCode != 0)
             {
                 Trace.WriteLine("The 'MvxSock.Trans' method retured the following non zero code.  " + ReturnCode);
+
+                String errorText = GetErrorText();
+
+                Trace.WriteLineIf((errorText != null), errorText);
 
                 return false;
             }
