@@ -20,6 +20,8 @@ namespace M3ApiClientInterface
 
         protected Int64 maximumRecordsToReturn;
 
+        protected UInt32 maximumWaitTime;
+
         protected RequestFieldDataList requestFieldDataList;
 
         protected UInt32? returnCode;
@@ -81,6 +83,19 @@ namespace M3ApiClientInterface
             }
         }
 
+        public virtual UInt32 MaximumWaitTime
+        {
+            get { return maximumWaitTime; }
+
+            set
+            {
+                if (value < 0)
+                { throw new PropertySetToOutOfRangeValueException("MaximumWaitTime"); }
+
+                maximumWaitTime = value;
+            }
+        }
+
         public virtual RequestFieldDataList RequestFieldDataList
         {
             get { return requestFieldDataList; }
@@ -114,6 +129,8 @@ namespace M3ApiClientInterface
             errorOnReturnCode8 = true;
 
             maximumRecordsToReturn = 0;
+
+            maximumWaitTime = 90;
 
             requestFieldDataList = new M3ApiClientInterface.RequestFieldDataList();
 
@@ -157,6 +174,13 @@ namespace M3ApiClientInterface
             }
 
             if (!SetMaximumRecordsForApiToReturn())
+            {
+                CloseServerConnection();
+
+                return false;
+            }
+
+            if (!SetMaximumWaitTime())
             {
                 CloseServerConnection();
 
@@ -391,6 +415,35 @@ namespace M3ApiClientInterface
             if (ReturnCode != 0)
             {
                 Trace.WriteLine("The 'MvxSock.Trans' method retured the following non zero code.  " + ReturnCode);
+
+                String errorText = GetErrorText();
+
+                Trace.WriteLineIf((errorText != null), errorText);
+
+                return false;
+            }
+
+            return true;
+        }
+
+        protected virtual Boolean SetMaximumWaitTime()
+        {
+            try
+            {
+                ReturnCode = MvxSock.SetMaxWait(ref serverId, MaximumWaitTime);
+            }
+            catch (Exception exception)
+            {
+                Trace.WriteLine(exception);
+
+                ReturnCode = null;
+
+                return false;
+            }
+
+            if (ReturnCode != 0)
+            {
+                Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured the following non zero code.  " + ReturnCode);
 
                 String errorText = GetErrorText();
 
