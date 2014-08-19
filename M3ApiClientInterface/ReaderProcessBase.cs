@@ -124,7 +124,7 @@ namespace M3ApiClientInterface
 
             connectionData = null;
 
-            enableZippedTransactions = true;
+            enableZippedTransactions = false;
 
             errorOnReturnCode8 = true;
 
