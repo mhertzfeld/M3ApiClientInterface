@@ -16,6 +16,8 @@ namespace M3ApiClientInterface
 
         protected Boolean enableZippedTransactions;
 
+        protected Boolean errorOnReturnCode8;
+
         protected Int64 maximumRecordsToReturn;
 
         protected RequestFieldDataList requestFieldDataList;
@@ -50,6 +52,13 @@ namespace M3ApiClientInterface
 
                 connectionData = value;
             }
+        }
+
+        public virtual Boolean ErrorOnReturnCode8
+        {
+            get { return errorOnReturnCode8; }
+
+            set { errorOnReturnCode8 = value; }
         }
 
         public virtual Boolean EnableZippedTransactions
@@ -101,6 +110,8 @@ namespace M3ApiClientInterface
             connectionData = null;
 
             enableZippedTransactions = true;
+
+            errorOnReturnCode8 = true;
 
             maximumRecordsToReturn = 0;
 
@@ -166,6 +177,13 @@ namespace M3ApiClientInterface
                 return false;
             }
 
+            if (!CheckReturnCode())
+            {
+                CloseServerConnection();
+
+                return false;
+            }
+
             if (!ProcessApiResults())
             {
                 CloseServerConnection();
@@ -178,7 +196,7 @@ namespace M3ApiClientInterface
             return true;
         }
 
-        public virtual Boolean ExecuteProcess(ConnectionData ConnectionData, ApiData ApiData, RequestFieldDataList RequestFieldDataList, Int64 MaximumRecordsToReturn = 0)
+        public virtual Boolean ExecuteProcess(ConnectionData ConnectionData, ApiData ApiData, RequestFieldDataList RequestFieldDataList, Int64 MaximumRecordsToReturn = 0, Boolean ErrorOnReturnCode8 = true)
         {
             this.ApiData = ApiData;
 
@@ -193,6 +211,38 @@ namespace M3ApiClientInterface
         
 
         //FUNCTIONS
+        protected virtual Boolean CheckReturnCode()
+        {
+            String errorText;
+
+            switch (ReturnCode)
+            {
+                case 0:
+
+                    return true;
+
+                case 8:
+
+                    Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
+
+                    errorText = GetErrorText();
+
+                    Trace.WriteLineIf((errorText != null), errorText);
+
+                    return (!ErrorOnReturnCode8);
+
+                default:
+
+                    Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
+
+                    errorText = GetErrorText();
+
+                    Trace.WriteLineIf((errorText != null), errorText);
+
+                    return false;
+            }
+        }
+
         protected virtual Boolean CloseServerConnection()
         {
             try
@@ -258,17 +308,6 @@ namespace M3ApiClientInterface
                 Trace.WriteLine(exception);
 
                 ReturnCode = null;
-
-                return false;
-            }
-
-            if (ReturnCode != 0)
-            {
-                Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
-
-                String errorText = GetErrorText();
-
-                Trace.WriteLineIf((errorText != null), errorText);
 
                 return false;
             }
