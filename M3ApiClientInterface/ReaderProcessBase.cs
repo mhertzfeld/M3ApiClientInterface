@@ -226,6 +226,8 @@ namespace M3ApiClientInterface
 
             this.ConnectionData = ConnectionData;
 
+            this.ErrorOnReturnCode8 = ErrorOnReturnCode8;
+
             this.MaximumRecordsToReturn = MaximumRecordsToReturn;
 
             this.RequestFieldDataList = RequestFieldDataList;
