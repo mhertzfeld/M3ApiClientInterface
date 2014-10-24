@@ -113,9 +113,9 @@ namespace M3ApiClientInterface
 
             errorOnReturnCode8 = true;
             
-            maximumWaitTime = 90;
+            maximumWaitTime = 90000;
 
-            requestFieldDataList = new M3ApiClientInterface.RequestFieldDataList();
+            requestFieldDataList = new RequestFieldDataList();
 
             returnCode = null;
 
@@ -312,8 +312,6 @@ namespace M3ApiClientInterface
             return MvxSock.GetField(ref serverId, fieldName);
         }
 
-        protected abstract Boolean ProcessApiResults();
-
         protected virtual Boolean SetEnableZippedTransactions()
         {
             try
@@ -465,13 +463,6 @@ namespace M3ApiClientInterface
             }
 
             if (!CheckReturnCode())
-            {
-                CloseServerConnection();
-
-                return false;
-            }
-
-            if (!ProcessApiResults())
             {
                 CloseServerConnection();
 

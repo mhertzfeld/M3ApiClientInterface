@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 
 namespace M3ApiClientInterface
@@ -8,8 +9,6 @@ namespace M3ApiClientInterface
         : WriterProcessBase
     {
         //FIELDS
-        protected T_DataObject dataObject;
-
         protected IEnumerable<T_DataObject> dataObjectEnumerable;
 
 
@@ -31,8 +30,6 @@ namespace M3ApiClientInterface
         //INITIALIZE
         public DataObjectEnumerableWriterBase()
         {
-            dataObject = default(T_DataObject);
-
             dataObjectEnumerable = null;
         }
 
@@ -61,17 +58,39 @@ namespace M3ApiClientInterface
 
 
         //FUNCTIONS
-        protected abstract RequestFieldDataList CreateRequestFieldDataList();
+        protected abstract RequestFieldDataList CreateRequestFieldDataList(T_DataObject dataObject);
+
+        protected virtual void GetApiResultValues(T_DataObject dataObject)
+        {
+
+        }
+
+        protected virtual Boolean ProcessApiResults(T_DataObject dataObject)
+        {
+            try
+            {
+                GetApiResultValues(dataObject);
+            }
+            catch (Exception exception)
+            {
+                Trace.WriteLine(exception);
+
+                return false;
+            }
+
+            return true;
+        }
 
         protected override bool WriteToServer()
         {
-            foreach (T_DataObject iterativeDataObject in DataObjectEnumerable)
+            foreach (T_DataObject dataObject in DataObjectEnumerable)
             {
-                dataObject = iterativeDataObject;
-
-                RequestFieldDataList = CreateRequestFieldDataList();
+                RequestFieldDataList = CreateRequestFieldDataList(dataObject);
 
                 if (!base.WriteToServer())
+                { return false; }
+
+                if (!ProcessApiResults(dataObject))
                 { return false; }
             }
 

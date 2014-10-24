@@ -130,7 +130,7 @@ namespace M3ApiClientInterface
 
             maximumRecordsToReturn = 0;
 
-            maximumWaitTime = 90;
+            maximumWaitTime = 90000;
 
             requestFieldDataList = new M3ApiClientInterface.RequestFieldDataList();
 
@@ -208,11 +208,14 @@ namespace M3ApiClientInterface
                 return false;
             }
 
-            if (!ProcessApiResults())
+            if (ReturnCode == 0)
             {
-                CloseServerConnection();
+                if (!ProcessApiResults())
+                {
+                    CloseServerConnection();
 
-                return false;
+                    return false;
+                }
             }
 
             CloseServerConnection();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 
 namespace M3ApiClientInterface
@@ -58,11 +59,38 @@ namespace M3ApiClientInterface
         //FUNCTIONS
         protected abstract RequestFieldDataList CreateRequestFieldDataList();
 
+        protected virtual void GetApiResultValues()
+        {
+
+        }
+
+        protected virtual Boolean ProcessApiResults()
+        {
+            try
+            {
+                GetApiResultValues();
+            }
+            catch (Exception exception)
+            {
+                Trace.WriteLine(exception);
+
+                return false;
+            }
+
+            return true;
+        }
+
         protected override bool WriteToServer()
         {
             RequestFieldDataList = CreateRequestFieldDataList();
 
-            return base.WriteToServer();
+            if (!base.WriteToServer())
+            { return false; }
+
+            if (!ProcessApiResults())
+            { return false; }
+
+            return true;
         }
     }
 }
