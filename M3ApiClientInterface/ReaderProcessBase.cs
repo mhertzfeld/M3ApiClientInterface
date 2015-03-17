@@ -130,7 +130,7 @@ namespace M3ApiClientInterface
 
             maximumRecordsToReturn = 0;
 
-            maximumWaitTime = 90000;
+            maximumWaitTime = 120000;
 
             requestFieldDataList = new M3ApiClientInterface.RequestFieldDataList();
 

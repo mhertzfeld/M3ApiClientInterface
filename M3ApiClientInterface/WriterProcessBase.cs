@@ -113,7 +113,7 @@ namespace M3ApiClientInterface
 
             errorOnReturnCode8 = true;
             
-            maximumWaitTime = 90000;
+            maximumWaitTime = 120000;
 
             requestFieldDataList = new RequestFieldDataList();
 
