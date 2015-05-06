@@ -18,15 +18,21 @@ namespace M3ApiClientInterface
 
         protected Boolean errorOnReturnCode8;
 
+        protected Int32 executionAttempts;
+        
         protected Int64 maximumRecordsToReturn;
 
         protected UInt32 maximumWaitTime;
 
         protected RequestFieldDataList requestFieldDataList;
 
+        protected Int32 retries;
+
         protected UInt32? returnCode;
 
         protected SERVER_ID serverId;
+
+        protected Int32 timeToWaitBetweenRetryAttempts;
 
 
         //PROPERTIES
@@ -70,6 +76,19 @@ namespace M3ApiClientInterface
             set { enableZippedTransactions = value; }
         }
 
+        public virtual Int32 ExecutionAttempts
+        {
+            get { return executionAttempts; }
+
+            protected set
+            {
+                if (value < 1)
+                { throw new PropertySetToOutOfRangeValueException("ExecutionAttempts"); }
+
+                executionAttempts = value;
+            }
+        }
+
         public virtual Int64 MaximumRecordsToReturn
         {
             get { return maximumRecordsToReturn; }
@@ -109,11 +128,37 @@ namespace M3ApiClientInterface
             }
         }
 
+        public virtual Int32 Retries
+        {
+            get { return retries; }
+
+            set
+            {
+                if (value < 0)
+                { throw new PropertySetToOutOfRangeValueException("Retries"); }
+
+                retries = value;
+            }
+        }
+
         public virtual UInt32? ReturnCode
         {
             get { return returnCode; }
 
             protected set { returnCode = value; }
+        }
+
+        public virtual Int32 TimeToWaitBetweenRetryAttempts
+        {
+            get { return timeToWaitBetweenRetryAttempts; }
+
+            set
+            {
+                if (value < 0)
+                { throw new PropertySetToOutOfRangeValueException("TimeToWaitBetweenRetryAttempts"); }
+
+                timeToWaitBetweenRetryAttempts = value;
+            }
         }
 
 
@@ -128,15 +173,21 @@ namespace M3ApiClientInterface
 
             errorOnReturnCode8 = true;
 
+            executionAttempts = 0;
+
             maximumRecordsToReturn = 0;
 
-            maximumWaitTime = 120000;
+            maximumWaitTime = 30000;
 
             requestFieldDataList = new M3ApiClientInterface.RequestFieldDataList();
+
+            retries = 0;
 
             returnCode = null;
 
             serverId = default(SERVER_ID);
+
+            timeToWaitBetweenRetryAttempts = 5000;
         }
 
 
@@ -158,10 +209,18 @@ namespace M3ApiClientInterface
             if (!ValidateInputs())
             { return false; }
 
+            returnCode = null;
+
             serverId = new SERVER_ID();
 
+            ExecutionAttempts++;
+
             if (!ConnectToServer())
-            { return false; }
+            {
+                CloseServerConnection();
+
+                return Retry();
+            }
 
             if (EnableZippedTransactions)
             {
@@ -200,78 +259,37 @@ namespace M3ApiClientInterface
 
                 return false;
             }
-
-            if (!CheckReturnCode())
-            {
-                CloseServerConnection();
-
-                return false;
-            }
-
-            if (ReturnCode == 0)
-            {
-                if (!ProcessApiResults())
-                {
-                    CloseServerConnection();
-
-                    return false;
-                }
-            }
-
-            CloseServerConnection();
-
-            return true;
-        }
-
-        public virtual Boolean ExecuteProcess(ConnectionData ConnectionData, ApiData ApiData, RequestFieldDataList RequestFieldDataList, Int64 MaximumRecordsToReturn = 0, Boolean ErrorOnReturnCode8 = true)
-        {
-            this.ApiData = ApiData;
-
-            this.ConnectionData = ConnectionData;
-
-            this.ErrorOnReturnCode8 = ErrorOnReturnCode8;
-
-            this.MaximumRecordsToReturn = MaximumRecordsToReturn;
-
-            this.RequestFieldDataList = RequestFieldDataList;
-
-            return ExecuteProcess();
-        }
-        
-
-        //FUNCTIONS
-        protected virtual Boolean CheckReturnCode()
-        {
-            String errorText;
-
-            switch (ReturnCode)
+            
+            switch (ReturnCode.Value)
             {
                 case 0:
 
-                    return true;
+                    return ReturnCodeZeroProcess();
+
+                case 7:
+
+                    return ReturnCodeSevenProcess();
 
                 case 8:
 
-                    Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
-
-                    errorText = GetErrorText();
-
-                    Trace.WriteLineIf((errorText != null), errorText);
-
-                    return (!ErrorOnReturnCode8);
+                    return ReturnCodeEightProcess();
 
                 default:
 
                     Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
 
-                    errorText = GetErrorText();
+                    String errorText = GetErrorText();
 
                     Trace.WriteLineIf((errorText != null), errorText);
+
+                    CloseServerConnection();
 
                     return false;
             }
         }
+        
 
+        //FUNCTIONS
         protected virtual Boolean CloseServerConnection()
         {
             try
@@ -369,6 +387,63 @@ namespace M3ApiClientInterface
 
         protected abstract Boolean ProcessApiResults();
 
+        protected virtual Boolean ReturnCodeEightProcess()
+        {
+            Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
+
+            String errorText = GetErrorText();
+
+            Trace.WriteLineIf((errorText != null), errorText);
+
+            CloseServerConnection();
+
+            return (!ErrorOnReturnCode8);
+        }
+
+        protected virtual Boolean ReturnCodeSevenProcess()
+        {
+            Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
+
+            String errorText = GetErrorText();
+
+            Trace.WriteLineIf((errorText != null), errorText);
+
+            CloseServerConnection();
+
+            return Retry();
+        }
+
+        protected virtual Boolean ReturnCodeZeroProcess()
+        {
+            Boolean returnState = ProcessApiResults();
+
+            CloseServerConnection();
+
+            return returnState;
+        }
+        
+        protected virtual UInt32 ReCalculateMaximumWaitTime()
+        {
+            return (MaximumWaitTime + MaximumWaitTime);
+        }
+
+        protected virtual Boolean Retry()
+        {
+            if (ExecutionAttempts <= Retries)
+            {
+                if (TimeToWaitBetweenRetryAttempts > 0)
+                { System.Threading.Thread.Sleep(TimeToWaitBetweenRetryAttempts); }
+
+                Trace.WriteLine("Attempting to retry the API call.  " + ExecutionAttempts);
+
+                MaximumWaitTime = ReCalculateMaximumWaitTime();
+
+                return ExecuteProcess(); 
+            }
+
+            return false;
+        }
+
         protected virtual Boolean SetEnableZippedTransactions()
         {
             try
@@ -406,7 +481,7 @@ namespace M3ApiClientInterface
             
             try
             {
-                ReturnCode = MvxSock.Trans(ref serverId, "SetLstMaxRec   0", stringBuilder, ref test);
+                ReturnCode = MvxSock.Trans(ref serverId, "SetLstMaxRec   " + MaximumRecordsToReturn.ToString(), stringBuilder, ref test);
             }
             catch (Exception exception)
             {
@@ -433,28 +508,31 @@ namespace M3ApiClientInterface
 
         protected virtual Boolean SetMaximumWaitTime()
         {
-            try
+            if (MaximumWaitTime > 0)
             {
-                ReturnCode = MvxSock.SetMaxWait(ref serverId, MaximumWaitTime);
-            }
-            catch (Exception exception)
-            {
-                Trace.WriteLine(exception);
+                try
+                {
+                    ReturnCode = MvxSock.SetMaxWait(ref serverId, MaximumWaitTime);
+                }
+                catch (Exception exception)
+                {
+                    Trace.WriteLine(exception);
 
-                ReturnCode = null;
+                    ReturnCode = null;
 
-                return false;
-            }
+                    return false;
+                }
 
-            if (ReturnCode != 0)
-            {
-                Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured the following non zero code.  " + ReturnCode);
+                if (ReturnCode != 0)
+                {
+                    Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured the following non zero code.  " + ReturnCode);
 
-                String errorText = GetErrorText();
+                    String errorText = GetErrorText();
 
-                Trace.WriteLineIf((errorText != null), errorText);
+                    Trace.WriteLineIf((errorText != null), errorText);
 
-                return false;
+                    return false;
+                }
             }
 
             return true;

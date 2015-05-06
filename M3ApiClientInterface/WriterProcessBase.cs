@@ -113,7 +113,7 @@ namespace M3ApiClientInterface
 
             errorOnReturnCode8 = true;
             
-            maximumWaitTime = 120000;
+            maximumWaitTime = 30000;
 
             requestFieldDataList = new RequestFieldDataList();
 
@@ -343,28 +343,31 @@ namespace M3ApiClientInterface
 
         protected virtual Boolean SetMaximumWaitTime()
         {
-            try
+            if (MaximumWaitTime > 0)
             {
-                ReturnCode = MvxSock.SetMaxWait(ref serverId, MaximumWaitTime);
-            }
-            catch (Exception exception)
-            {
-                Trace.WriteLine(exception);
+                try
+                {
+                    ReturnCode = MvxSock.SetMaxWait(ref serverId, MaximumWaitTime);
+                }
+                catch (Exception exception)
+                {
+                    Trace.WriteLine(exception);
 
-                ReturnCode = null;
+                    ReturnCode = null;
 
-                return false;
-            }
+                    return false;
+                }
 
-            if (ReturnCode != 0)
-            {
-                Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured the following non zero code.  " + ReturnCode);
+                if (ReturnCode != 0)
+                {
+                    Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured the following non zero code.  " + ReturnCode);
 
-                String errorText = GetErrorText();
+                    String errorText = GetErrorText();
 
-                Trace.WriteLineIf((errorText != null), errorText);
+                    Trace.WriteLineIf((errorText != null), errorText);
 
-                return false;
+                    return false;
+                }
             }
 
             return true;
