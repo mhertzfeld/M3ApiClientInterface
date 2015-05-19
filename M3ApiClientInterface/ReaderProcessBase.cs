@@ -389,15 +389,26 @@ namespace M3ApiClientInterface
 
         protected virtual Boolean ReturnCodeEightProcess()
         {
-            Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
+            Boolean returnState;
 
-            String errorText = GetErrorText();
+            if (ErrorOnReturnCode8)
+            {
+                Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
 
-            Trace.WriteLineIf((errorText != null), errorText);
+                String errorText = GetErrorText();
+
+                Trace.WriteLineIf((errorText != null), errorText);
+
+                returnState = false;
+            }
+            else
+            {
+                returnState = true;
+            }
 
             CloseServerConnection();
 
-            return (!ErrorOnReturnCode8);
+            return returnState;
         }
 
         protected virtual Boolean ReturnCodeSevenProcess()
