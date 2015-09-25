@@ -22,7 +22,13 @@ namespace M3ApiClientInterface
         
         protected Int64 maximumRecordsToReturn;
 
+        protected Int32 maximumTimeToWaitBetweenRetries;
+
         protected UInt32 maximumWaitTime;
+
+        protected Int32 minimumTimeToWaitBetweenRetries; 
+
+        protected Random randomNumberGenerator;
 
         protected RequestFieldDataList requestFieldDataList;
 
@@ -31,9 +37,7 @@ namespace M3ApiClientInterface
         protected UInt32? returnCode;
 
         protected SERVER_ID serverId;
-
-        protected Int32 timeToWaitBetweenRetryAttempts;
-
+        
 
         //PROPERTIES
         public virtual ApiData ApiData
@@ -102,6 +106,19 @@ namespace M3ApiClientInterface
             }
         }
 
+        public virtual Int32 MaximumTimeToWaitBetweenRetries
+        {
+            get { return maximumTimeToWaitBetweenRetries; }
+
+            set
+            {
+                if (value <= 1000)
+                { throw new PropertySetToOutOfRangeValueException("MaximumTimeToWaitBetweenRetries"); }
+
+                maximumTimeToWaitBetweenRetries = value;
+            }
+        }
+
         public virtual UInt32 MaximumWaitTime
         {
             get { return maximumWaitTime; }
@@ -112,6 +129,19 @@ namespace M3ApiClientInterface
                 { throw new PropertySetToOutOfRangeValueException("MaximumWaitTime"); }
 
                 maximumWaitTime = value;
+            }
+        }
+
+        public virtual Int32 MinimumTimeToWaitBetweenRetries
+        {
+            get { return minimumTimeToWaitBetweenRetries; }
+
+            set
+            {
+                if (value < 500)
+                { throw new PropertySetToOutOfRangeValueException("MinimumTimeToWaitBetweenRetries"); }
+
+                minimumTimeToWaitBetweenRetries = value;
             }
         }
 
@@ -147,20 +177,7 @@ namespace M3ApiClientInterface
 
             protected set { returnCode = value; }
         }
-
-        public virtual Int32 TimeToWaitBetweenRetryAttempts
-        {
-            get { return timeToWaitBetweenRetryAttempts; }
-
-            set
-            {
-                if (value < 0)
-                { throw new PropertySetToOutOfRangeValueException("TimeToWaitBetweenRetryAttempts"); }
-
-                timeToWaitBetweenRetryAttempts = value;
-            }
-        }
-
+        
 
         //INITIALIZE
         public ReaderProcessBase()
@@ -177,17 +194,21 @@ namespace M3ApiClientInterface
 
             maximumRecordsToReturn = 0;
 
+            maximumTimeToWaitBetweenRetries = 30000;
+
             maximumWaitTime = 30000;
+
+            minimumTimeToWaitBetweenRetries = 5000;
+
+            randomNumberGenerator = new Random();
 
             requestFieldDataList = new M3ApiClientInterface.RequestFieldDataList();
 
-            retries = 0;
+            retries = 3;
 
             returnCode = null;
 
             serverId = default(SERVER_ID);
-
-            timeToWaitBetweenRetryAttempts = 5000;
         }
 
 
@@ -228,7 +249,7 @@ namespace M3ApiClientInterface
                 {
                     CloseServerConnection();
 
-                    return false;
+                    return Retry();
                 }
             }
 
@@ -236,28 +257,28 @@ namespace M3ApiClientInterface
             {
                 CloseServerConnection();
 
-                return false;
+                return Retry();
             }
 
             if (!SetMaximumWaitTime())
             {
                 CloseServerConnection();
 
-                return false;
+                return Retry();
             }
 
             if (!SetRequestFields())
             {
                 CloseServerConnection();
 
-                return false;
+                return Retry();
             }
 
             if (!ExecuteApi())
             {
                 CloseServerConnection();
 
-                return false;
+                return Retry();
             }
             
             switch (ReturnCode.Value)
@@ -433,21 +454,13 @@ namespace M3ApiClientInterface
             return returnState;
         }
         
-        protected virtual UInt32 ReCalculateMaximumWaitTime()
-        {
-            return (MaximumWaitTime + MaximumWaitTime);
-        }
-
         protected virtual Boolean Retry()
         {
             if (ExecutionAttempts <= Retries)
             {
-                if (TimeToWaitBetweenRetryAttempts > 0)
-                { System.Threading.Thread.Sleep(TimeToWaitBetweenRetryAttempts); }
+                System.Threading.Thread.Sleep(randomNumberGenerator.Next(MinimumTimeToWaitBetweenRetries, MaximumTimeToWaitBetweenRetries));
 
                 Trace.WriteLine("Attempting to retry the API call.  " + ExecutionAttempts);
-
-                MaximumWaitTime = ReCalculateMaximumWaitTime();
 
                 return ExecuteProcess(); 
             }
