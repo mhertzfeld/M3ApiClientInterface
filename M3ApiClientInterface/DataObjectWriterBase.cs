@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 
 namespace M3ApiClientInterface
@@ -57,7 +58,7 @@ namespace M3ApiClientInterface
 
 
         //FUNCTIONS
-        protected abstract RequestFieldDataList CreateRequestFieldDataList();
+        protected abstract List<RequestFieldData> CreateRequestFieldDataList();
 
         protected virtual void GetApiResultValues()
         {

@@ -20,7 +20,7 @@ namespace M3ApiClientInterface
 
         protected UInt32 maximumWaitTime;
 
-        protected RequestFieldDataList requestFieldDataList;
+        protected List<RequestFieldData> requestFieldDataList;
 
         protected UInt32? returnCode;
 
@@ -81,13 +81,13 @@ namespace M3ApiClientInterface
             }
         }
 
-        public virtual RequestFieldDataList RequestFieldDataList
+        public virtual List<RequestFieldData> RequestFieldDataList
         {
             get { return requestFieldDataList; }
 
             set
             {
-                if (value == default(RequestFieldDataList))
+                if (value == default(List<RequestFieldData>))
                 { throw new PropertySetToDefaultException("RequestFieldDataList"); }
 
                 requestFieldDataList = value;
@@ -115,7 +115,7 @@ namespace M3ApiClientInterface
             
             maximumWaitTime = 30000;
 
-            requestFieldDataList = new RequestFieldDataList();
+            requestFieldDataList = new List<RequestFieldData>();
 
             returnCode = null;
 

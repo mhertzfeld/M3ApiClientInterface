@@ -58,7 +58,7 @@ namespace M3ApiClientInterface
 
 
         //FUNCTIONS
-        protected abstract RequestFieldDataList CreateRequestFieldDataList(T_DataObject dataObject);
+        protected abstract List<RequestFieldData> CreateRequestFieldDataList(T_DataObject dataObject);
 
         protected virtual void GetApiResultValues(T_DataObject dataObject)
         {

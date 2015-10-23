@@ -30,7 +30,7 @@ namespace M3ApiClientInterface
 
         protected Random randomNumberGenerator;
 
-        protected RequestFieldDataList requestFieldDataList;
+        protected List<RequestFieldData> requestFieldDataList;
 
         protected Int32 retries;
 
@@ -145,13 +145,13 @@ namespace M3ApiClientInterface
             }
         }
 
-        public virtual RequestFieldDataList RequestFieldDataList
+        public virtual List<RequestFieldData> RequestFieldDataList
         {
             get { return requestFieldDataList; }
 
             set
             {
-                if (value == default(RequestFieldDataList))
+                if (value == default(List<RequestFieldData>))
                 { throw new PropertySetToDefaultException("RequestFieldDataList"); }
 
                 requestFieldDataList = value;
@@ -202,7 +202,7 @@ namespace M3ApiClientInterface
 
             randomNumberGenerator = new Random();
 
-            requestFieldDataList = new M3ApiClientInterface.RequestFieldDataList();
+            requestFieldDataList = new List<RequestFieldData>();
 
             retries = 3;
 
@@ -229,6 +229,8 @@ namespace M3ApiClientInterface
 
             if (!ValidateInputs())
             { return false; }
+
+
 
             returnCode = null;
 

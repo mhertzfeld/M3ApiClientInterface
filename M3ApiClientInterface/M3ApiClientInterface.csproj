@@ -96,7 +96,6 @@
     <Compile Include="ReaderProcessBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RequestFieldData.cs" />
-    <Compile Include="RequestFieldDataList.cs" />
     <Compile Include="ValueOutOfRangeException.cs" />
   </ItemGroup>
   <ItemGroup>
