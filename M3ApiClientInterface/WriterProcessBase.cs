@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 
 
@@ -132,6 +133,9 @@ namespace M3ApiClientInterface
             if (ConnectionData == null)
             { throw new InvalidOperationException("ConnectionData can not be null."); }
 
+            if (MaximumWaitTime <= 0)
+            { throw new InvalidOperationException("MaximumWaitTime is not in range."); }
+
             if (RequestFieldDataList == null)
             { throw new InvalidOperationException("RequestFieldDataList can not be null."); }
 
@@ -170,17 +174,6 @@ namespace M3ApiClientInterface
             CloseServerConnection();
 
             return true;
-        }
-
-        public virtual Boolean ExecuteProcess(ConnectionData ConnectionData, ApiData ApiData, Boolean ErrorOnReturnCode8 = true)
-        {
-            this.ApiData = ApiData;
-
-            this.ConnectionData = ConnectionData;
-
-            this.ErrorOnReturnCode8 = ErrorOnReturnCode8;
-
-            return ExecuteProcess();
         }
         
 
@@ -222,24 +215,22 @@ namespace M3ApiClientInterface
             try
             {
                 ReturnCode = MvxSock.Close(ref serverId);
+
+                if (ReturnCode.GetValueOrDefault() == 0)
+                { return true; }
             }
             catch (Exception exception)
-            {
-                Trace.WriteLine(exception);
+            { Trace.WriteLine(exception.ToString()); }
 
-                ReturnCode = null;
+            Trace.WriteLine("The 'MvxSock.Close' method retured the following non zero code.  " + ReturnCode);
 
-                return false;
-            }
+            String errorText = GetErrorText();
 
-            if (ReturnCode != 0)
-            {
-                Trace.WriteLine("The 'MvxSock.Close' method retured the following non zero code.  " + ReturnCode);
+            Trace.WriteLineIf((errorText != null), errorText);
 
-                return false;
-            }
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
-            return true;
+            return false;
         }
 
         protected virtual Boolean ConnectToServer()
@@ -247,28 +238,22 @@ namespace M3ApiClientInterface
             try
             {
                 ReturnCode = MvxSock.Connect(ref serverId, ConnectionData.Server, ConnectionData.Port, ConnectionData.UserName, ConnectionData.Password, ApiData.Api, null);
+
+                if (ReturnCode.GetValueOrDefault() == 0)
+                { return true; }
             }
             catch (Exception exception)
-            {
-                Trace.WriteLine(exception);
+            { Trace.WriteLine(exception.ToString()); }
 
-                ReturnCode = null;
+            Trace.WriteLine("The 'MvxSock.Connect' method retured the following non zero code.  " + ReturnCode);
 
-                return false;
-            }
+            String errorText = GetErrorText();
 
-            if (ReturnCode != 0)
-            {
-                Trace.WriteLine("The 'MvxSock.Connect' method retured the following non zero code.  " + ReturnCode);
+            Trace.WriteLineIf((errorText != null), errorText);
 
-                String errorText = GetErrorText();
-
-                Trace.WriteLineIf((errorText != null), errorText);
-
-                return false;
-            }
-
-            return true;
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
+            
+            return false;
         }
 
         protected virtual Boolean ExecuteApi()
@@ -276,17 +261,15 @@ namespace M3ApiClientInterface
             try
             {
                 ReturnCode = MvxSock.Access(ref serverId, ApiData.Method);
+
+                return true;
             }
             catch (Exception exception)
-            {
-                Trace.WriteLine(exception);
+            { Trace.WriteLine(exception.ToString()); }
 
-                ReturnCode = null;
-
-                return false;
-            }
-
-            return true;
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
+            
+            return false;
         }
 
         protected virtual String GetErrorText()
@@ -296,15 +279,15 @@ namespace M3ApiClientInterface
             try
             {
                 errorText = Lawson.M3.MvxSock.MvxSock.GetLastError(ref serverId).Trim();
-            }
-            catch(Exception exception)
-            {
-                Trace.Write(exception);
 
-                return null;
+                return (errorText.Length == 0 ? null : errorText);
             }
+            catch (Exception exception)
+            { Trace.WriteLine(exception.ToString()); }
 
-            return (errorText.Length == 0 ? null : errorText);
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
+
+            return null;
         }
 
         protected virtual String GetValueFromField(String fieldName)
@@ -317,89 +300,83 @@ namespace M3ApiClientInterface
             try
             {
                 ReturnCode = MvxSock.SetZippedTransactions(ref serverId, 1);
+
+                if (ReturnCode.GetValueOrDefault() == 0)
+                { return true; }
             }
             catch (Exception exception)
-            {
-                Trace.WriteLine(exception);
+            { Trace.WriteLine(exception.ToString()); }
 
-                ReturnCode = null;
+            Trace.WriteLine("The 'MvxSock.SetZippedTransactions' method retured the following non zero code.  " + ReturnCode);
 
-                return false;
-            }
+            String errorText = GetErrorText();
 
-            if (ReturnCode != 0)
-            {
-                Trace.WriteLine("The 'MvxSock.SetZippedTransactions' method retured the following non zero code.  " + ReturnCode);
+            Trace.WriteLineIf((errorText != null), errorText);
 
-                String errorText = GetErrorText();
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
-                Trace.WriteLineIf((errorText != null), errorText);
-
-                return false;
-            }
-
-            return true;
+            return false;
         }
 
         protected virtual Boolean SetMaximumWaitTime()
         {
-            if (MaximumWaitTime > 0)
+            try
             {
-                try
-                {
-                    ReturnCode = MvxSock.SetMaxWait(ref serverId, MaximumWaitTime);
-                }
-                catch (Exception exception)
-                {
-                    Trace.WriteLine(exception);
+                ReturnCode = MvxSock.SetMaxWait(ref serverId, MaximumWaitTime);
 
-                    ReturnCode = null;
-
-                    return false;
-                }
-
-                if (ReturnCode != 0)
-                {
-                    Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured the following non zero code.  " + ReturnCode);
-
-                    String errorText = GetErrorText();
-
-                    Trace.WriteLineIf((errorText != null), errorText);
-
-                    return false;
-                }
+                if (ReturnCode.GetValueOrDefault() == 0)
+                { return true; }
             }
+            catch (Exception exception)
+            { Trace.WriteLine(exception.ToString()); }
 
-            return true;
+            Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured the following non zero code.  " + ReturnCode);
+
+            String errorText = GetErrorText();
+
+            Trace.WriteLineIf((errorText != null), errorText);
+
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
+
+            return false;
         }
 
         protected virtual Boolean SetRequestField(RequestFieldData requestFieldData)
         {
-            ReturnCode = null;
-
             try
             {
+                ReturnCode = null;
+
                 MvxSock.SetField(ref serverId, requestFieldData.FieldName, requestFieldData.FieldValue);
+
+                return true;
             }
             catch (Exception exception)
-            {
-                Trace.WriteLine(exception);
+            { Trace.WriteLine(exception.ToString()); }
 
-                return false;
-            }
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
-            return true;
+            return false;
         }
 
         protected virtual Boolean SetRequestFields()
         {
-            foreach (RequestFieldData requestField in RequestFieldDataList)
+            try
             {
-                if (!SetRequestField(requestField))
-                { return false; }
-            }
+                foreach (RequestFieldData requestField in RequestFieldDataList)
+                {
+                    if (!SetRequestField(requestField))
+                    { return false; }
+                }
 
-            return true;
+                return true;
+            }
+            catch (Exception exception)
+            { Trace.WriteLine(exception.ToString()); }
+
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
+
+            return false;
         }
 
         protected virtual Boolean ValidateInputs()
