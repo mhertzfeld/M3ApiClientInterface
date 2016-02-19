@@ -31,7 +31,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>false</SignAssembly>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>M3ApiClientInterface.snk</AssemblyOriginatorKeyFile>
@@ -76,8 +76,8 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MvxSockNx64">
-      <HintPath>..\..\..\Library\MvxApi\7.2\MvxSockNx64.dll</HintPath>
+    <Reference Include="DariceMvxSock64">
+      <HintPath>..\..\..\Library\DariceMvxSock64\1.0.0.0\DariceMvxSock64.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

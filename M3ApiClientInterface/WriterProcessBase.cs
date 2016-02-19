@@ -19,9 +19,19 @@ namespace M3ApiClientInterface
 
         protected Boolean errorOnReturnCode8;
 
+        protected Int32 executionAttempts;
+
+        protected Int32 maximumTimeToWaitBetweenRetries;
+
         protected UInt32 maximumWaitTime;
 
+        protected Int32 minimumTimeToWaitBetweenRetries;
+
+        protected Random random;
+
         protected List<RequestFieldData> requestFieldDataList;
+
+        protected Int32 retries;
 
         protected UInt32? returnCode;
 
@@ -68,7 +78,33 @@ namespace M3ApiClientInterface
 
             set { enableZippedTransactions = value; }
         }
-        
+
+        public virtual Int32 ExecutionAttempts
+        {
+            get { return executionAttempts; }
+
+            protected set
+            {
+                if (value < 1)
+                { throw new PropertySetToOutOfRangeValueException("ExecutionAttempts"); }
+
+                executionAttempts = value;
+            }
+        }
+
+        public virtual Int32 MaximumTimeToWaitBetweenRetries
+        {
+            get { return maximumTimeToWaitBetweenRetries; }
+
+            set
+            {
+                if (value <= 1000)
+                { throw new PropertySetToOutOfRangeValueException("MaximumTimeToWaitBetweenRetries"); }
+
+                maximumTimeToWaitBetweenRetries = value;
+            }
+        }
+
         public virtual UInt32 MaximumWaitTime
         {
             get { return maximumWaitTime; }
@@ -79,6 +115,32 @@ namespace M3ApiClientInterface
                 { throw new PropertySetToOutOfRangeValueException("MaximumWaitTime"); }
 
                 maximumWaitTime = value;
+            }
+        }
+
+        public virtual Int32 MinimumTimeToWaitBetweenRetries
+        {
+            get { return minimumTimeToWaitBetweenRetries; }
+
+            set
+            {
+                if (value < 500)
+                { throw new PropertySetToOutOfRangeValueException("MinimumTimeToWaitBetweenRetries"); }
+
+                minimumTimeToWaitBetweenRetries = value;
+            }
+        }
+
+        public virtual Random Random
+        {
+            get { return random; }
+
+            set
+            {
+                if (value == default(Random))
+                { throw new PropertySetToDefaultException("Random"); }
+
+                random = value;
             }
         }
 
@@ -95,6 +157,19 @@ namespace M3ApiClientInterface
             }
         }
 
+        public virtual Int32 Retries
+        {
+            get { return retries; }
+
+            set
+            {
+                if (value < 0)
+                { throw new PropertySetToOutOfRangeValueException("Retries"); }
+
+                retries = value;
+            }
+        }
+
         public virtual UInt32? ReturnCode
         {
             get { return returnCode; }
@@ -102,7 +177,7 @@ namespace M3ApiClientInterface
             protected set { returnCode = value; }
         }
 
-
+        
         //INITIALIZE
         public WriterProcessBase()
         {
@@ -113,67 +188,101 @@ namespace M3ApiClientInterface
             enableZippedTransactions = false;
 
             errorOnReturnCode8 = true;
+
+            executionAttempts = 0;
             
+            maximumTimeToWaitBetweenRetries = 30000;
+
             maximumWaitTime = 30000;
+
+            minimumTimeToWaitBetweenRetries = 5000;
+
+            random = null;
 
             requestFieldDataList = new List<RequestFieldData>();
 
-            returnCode = null;
+            retries = 5;
 
+            returnCode = null;
+            
             serverId = default(SERVER_ID);
+        }
+
+        public WriterProcessBase(Random Random)
+            : this()
+        {
+            this.Random = Random;
         }
 
 
         //METHODS
         public virtual Boolean ExecuteProcess()
         {
-            if (ApiData == null)
-            { throw new InvalidOperationException("ApiData can not be null."); }
-            
-            if (ConnectionData == null)
-            { throw new InvalidOperationException("ConnectionData can not be null."); }
-
-            if (MaximumWaitTime <= 0)
-            { throw new InvalidOperationException("MaximumWaitTime is not in range."); }
-
-            if (RequestFieldDataList == null)
-            { throw new InvalidOperationException("RequestFieldDataList can not be null."); }
-
-            if (!ValidateInputs())
-            { return false; }
-
-            serverId = new SERVER_ID();
-
-            if (!ConnectToServer())
-            { return false; }
-
-            if (EnableZippedTransactions)
+            try
             {
-                if (!SetEnableZippedTransactions())
+                ExecutionAttempts++;
+
+                if (ApiData == null)
+                { throw new InvalidOperationException("ApiData can not be null."); }
+
+                if (ConnectionData == null)
+                { throw new InvalidOperationException("ConnectionData can not be null."); }
+
+                if (MaximumWaitTime <= 0)
+                { throw new InvalidOperationException("MaximumWaitTime is not in range."); }
+
+                if (RequestFieldDataList == null)
+                { throw new InvalidOperationException("RequestFieldDataList can not be null."); }
+
+                if (!ValidateInputs())
+                { return false; }
+
+                if (random == null)
+                { random = new Random(); }
+
+                serverId = new SERVER_ID();
+
+                if (!ConnectToServer())
                 {
                     CloseServerConnection();
 
-                    return false;
+                    return Retry();
                 }
-            }
 
-            if (!SetMaximumWaitTime())
-            {
+                if (EnableZippedTransactions)
+                {
+                    if (!SetEnableZippedTransactions())
+                    {
+                        CloseServerConnection();
+
+                        return Retry();
+                    }
+                }
+
+                if (!SetMaximumWaitTime())
+                {
+                    CloseServerConnection();
+
+                    return Retry();
+                }
+
+                if (!WriteToServer())
+                {
+                    CloseServerConnection();
+
+                    return Retry();
+                }
+
                 CloseServerConnection();
 
-                return false;
+                return true;
             }
+            catch (Exception exception)
+            { Trace.WriteLine(exception.ToString()); }
 
-            if (!WriteToServer())
-            {
-                CloseServerConnection();
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
-                return false;
-            }
-
-            CloseServerConnection();
-
-            return true;
+            return false;
         }
         
 
@@ -293,6 +402,31 @@ namespace M3ApiClientInterface
         protected virtual String GetValueFromField(String fieldName)
         {
             return MvxSock.GetField(ref serverId, fieldName);
+        }
+
+        protected virtual Boolean Retry()
+        {
+            try
+            {
+                if (ExecutionAttempts <= Retries)
+                {
+                    System.Threading.Thread.Sleep(random.Next(MinimumTimeToWaitBetweenRetries, MaximumTimeToWaitBetweenRetries));
+
+                    Trace.WriteLine("Attempting to retry the API call.  " + ExecutionAttempts);
+
+                    return ExecuteProcess();
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception exception)
+            { Trace.WriteLine(exception); }
+
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
+
+            return false;
         }
 
         protected virtual Boolean SetEnableZippedTransactions()
@@ -429,25 +563,13 @@ namespace M3ApiClientInterface
         protected virtual Boolean WriteToServer()
         {
             if (!SetRequestFields())
-            {
-                CloseServerConnection();
-
-                return false;
-            }
+            { return false; }
 
             if (!ExecuteApi())
-            {
-                CloseServerConnection();
-
-                return false;
-            }
+            { return false; }
 
             if (!CheckReturnCode())
-            {
-                CloseServerConnection();
-
-                return false;
-            }
+            { return false; }
 
             return true;
         }
