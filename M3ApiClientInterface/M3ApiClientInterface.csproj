@@ -76,8 +76,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DariceMvxSock64">
-      <HintPath>..\..\..\Library\DariceMvxSock64\1.0.0.0\DariceMvxSock64.dll</HintPath>
+    <Reference Include="MvxSockNSignedX64, Version=1.0.0.0, Culture=neutral, PublicKeyToken=abce06d857ad9e9b, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Library\MvxSockNSigned\MvxSockNSignedX64\MvxSockNSignedX64.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -100,8 +101,6 @@
     <Compile Include="ValueOutOfRangeException.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Documents\M3ApiClientInterface License.txt" />
-    <Content Include="Documents\MyClassLibrary License.txt" />
     <Content Include="Documents\ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
