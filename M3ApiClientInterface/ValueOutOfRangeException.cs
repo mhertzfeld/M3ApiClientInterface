@@ -7,7 +7,7 @@ namespace M3ApiClientInterface
         : System.Exception
     {
         public ValueOutOfRangeException(String variableName)
-            : base("The value for '" + variableName + "' is out of range.")
+            : base(String.Format("The value for '{0}' is out of range.", variableName))
         {
 
         }

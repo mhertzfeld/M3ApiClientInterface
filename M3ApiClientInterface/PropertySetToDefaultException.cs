@@ -7,7 +7,7 @@ namespace M3ApiClientInterface
         : System.Exception
     {
         public PropertySetToDefaultException(String propertyName)
-            : base("'" + propertyName + "' can not be set to its default.")
+            : base(String.Format("'{0}' can not be set to its default.", propertyName))
         {
             
         }

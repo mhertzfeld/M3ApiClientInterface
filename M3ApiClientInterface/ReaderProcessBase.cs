@@ -145,20 +145,7 @@ namespace M3ApiClientInterface
                 minimumTimeToWaitBetweenRetries = value;
             }
         }
-
-        public virtual Random Random
-        {
-            get { return random; }
-
-            set
-            {
-                if (value == default(Random))
-                { throw new PropertySetToDefaultException("Random"); }
-
-                random = value;
-            }
-        }
-
+        
         public virtual List<RequestFieldData> RequestFieldDataList
         {
             get { return requestFieldDataList; }
@@ -223,12 +210,6 @@ namespace M3ApiClientInterface
             returnCode = null;
 
             serverId = default(SERVER_ID);
-        }
-
-        public ReaderProcessBase(Random Random)
-            : this()
-        {
-            this.Random = Random;
         }
 
 
@@ -309,32 +290,11 @@ namespace M3ApiClientInterface
                     return Retry();
                 }
 
-                switch (ReturnCode.Value)
-                {
-                    case 0:
+                Boolean returnState = ProcessApiResults();
 
-                        return ReturnCodeZeroProcess();
+                CloseServerConnection();
 
-                    case 7:
-
-                        return ReturnCodeSevenProcess();
-
-                    case 8:
-
-                        return ReturnCodeEightProcess();
-
-                    default:
-
-                        Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
-
-                        String errorText = GetErrorText();
-
-                        Trace.WriteLineIf((errorText != null), errorText);
-
-                        CloseServerConnection();
-
-                        return false;
-                }
+                return returnState;
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
@@ -358,7 +318,7 @@ namespace M3ApiClientInterface
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
 
-            Trace.WriteLine("The 'MvxSock.Close' method retured the following non zero code.  " + ReturnCode);
+            Trace.WriteLine("The 'MvxSock.Close' method retured non zero code:" + ReturnCode);
 
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
@@ -379,7 +339,7 @@ namespace M3ApiClientInterface
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
 
-            Trace.WriteLine("The 'MvxSock.Connect' method retured the following non zero code.  " + ReturnCode);
+            Trace.WriteLine("The 'MvxSock.Connect' method retured non zero code:" + ReturnCode);
 
             String errorText = GetErrorText();
 
@@ -389,14 +349,14 @@ namespace M3ApiClientInterface
 
             return false;
         }
-
+        
         protected virtual Boolean ExecuteApi()
         {
             try
             {
                 ReturnCode = MvxSock.Access(ref serverId, ApiData.Method);
 
-                return true;
+                return EvaluateMvxSockAccessReturnCode();
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
@@ -431,53 +391,44 @@ namespace M3ApiClientInterface
             return MvxSock.GetField(ref serverId, fieldName);
         }
 
+        protected virtual Boolean EvaluateMvxSockAccessReturnCode()
+        {
+            switch (ReturnCode.Value)
+            {
+                case 0:
+
+                    return true;
+
+                case 8:
+                    
+                    if (ErrorOnReturnCode8)
+                    {
+                        Trace.WriteLine("The 'MvxSock.Connect' method retured non zero code:" + ReturnCode);
+
+                        String returnCode8ErrorText = GetErrorText();
+
+                        Trace.WriteLineIf((returnCode8ErrorText != null), returnCode8ErrorText);
+
+                        return false;
+                    }
+                    else
+                    {
+                        return true;
+                    }
+
+                default:
+
+                    Trace.WriteLine("The 'MvxSock.Access' method retured non zero code:" + ReturnCode);
+
+                    String errorText = GetErrorText();
+
+                    Trace.WriteLineIf((errorText != null), errorText);
+
+                    return false;
+            }
+        }
+
         protected abstract Boolean ProcessApiResults();
-
-        protected virtual Boolean ReturnCodeEightProcess()
-        {
-            Boolean returnState;
-
-            if (ErrorOnReturnCode8)
-            {
-                Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
-
-                String errorText = GetErrorText();
-
-                Trace.WriteLineIf((errorText != null), errorText);
-
-                returnState = false;
-            }
-            else
-            {
-                returnState = true;
-            }
-
-            CloseServerConnection();
-
-            return returnState;
-        }
-
-        protected virtual Boolean ReturnCodeSevenProcess()
-        {
-            Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
-
-            String errorText = GetErrorText();
-
-            Trace.WriteLineIf((errorText != null), errorText);
-
-            CloseServerConnection();
-
-            return Retry();
-        }
-
-        protected virtual Boolean ReturnCodeZeroProcess()
-        {
-            Boolean returnState = ProcessApiResults();
-
-            CloseServerConnection();
-
-            return returnState;
-        }
         
         protected virtual Boolean Retry()
         {
@@ -487,7 +438,7 @@ namespace M3ApiClientInterface
                 {
                     System.Threading.Thread.Sleep(random.Next(MinimumTimeToWaitBetweenRetries, MaximumTimeToWaitBetweenRetries));
 
-                    Trace.WriteLine("Attempting to retry the API call.  " + ExecutionAttempts);
+                    Trace.WriteLine("Attempting to retry the API call.  Execution Attempt:" + ExecutionAttempts);
 
                     return ExecuteProcess();
                 }
@@ -520,7 +471,7 @@ namespace M3ApiClientInterface
             catch (Exception exception)
             { Trace.WriteLine(exception); }
 
-            Trace.WriteLine("The 'MvxSock.SetZippedTransactions' method retured the following non zero code.  " + ReturnCode);
+            Trace.WriteLine("The 'MvxSock.SetZippedTransactions' method retured non zero code:" + ReturnCode);
 
             String errorText = GetErrorText();
 
@@ -547,7 +498,7 @@ namespace M3ApiClientInterface
             catch (Exception exception)
             { Trace.WriteLine(exception); }
 
-            Trace.WriteLine("The 'MvxSock.Trans' method retured the following non zero code.  " + ReturnCode);
+            Trace.WriteLine("The 'MvxSock.Trans' method retured non zero code:" + ReturnCode);
 
             String errorText = GetErrorText();
 
@@ -570,7 +521,7 @@ namespace M3ApiClientInterface
             catch (Exception exception)
             { Trace.WriteLine(exception); }
 
-            Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured the following non zero code.  " + ReturnCode);
+            Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured non zero code:" + ReturnCode);
 
             String errorText = GetErrorText();
 

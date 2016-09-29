@@ -7,7 +7,7 @@ namespace M3ApiClientInterface
         : System.Exception
     {
         public PropertySetToOutOfRangeValueException(String propertyName)
-            : base("'" + propertyName + "' can not be set to an out of range vale.")
+            : base(String.Format("'{0}' can not be set to an out of range vale.", propertyName))
         {
             
         }
