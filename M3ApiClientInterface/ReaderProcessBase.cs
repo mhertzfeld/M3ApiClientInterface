@@ -229,8 +229,7 @@ namespace M3ApiClientInterface
                 if (RequestFieldDataList == null)
                 { throw new InvalidOperationException("RequestFieldDataList can not be null."); }
 
-                if (random == null)
-                { random = new Random(); }
+                random = new Random();
 
                 SetApiData();
 
