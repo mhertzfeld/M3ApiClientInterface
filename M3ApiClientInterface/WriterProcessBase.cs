@@ -16,9 +16,7 @@ namespace M3ApiClientInterface
         protected ConnectionData connectionData;
 
         protected Boolean enableZippedTransactions;
-
-        protected Boolean errorOnReturnCode8;
-
+        
         protected Int32 executionAttempts;
 
         protected Int32 maximumTimeToWaitBetweenRetries;
@@ -32,6 +30,8 @@ namespace M3ApiClientInterface
         protected List<RequestFieldData> requestFieldDataList;
 
         protected Int32 retries;
+
+        protected Boolean retryOnErrorCode8;
 
         protected UInt32? returnCode;
 
@@ -64,21 +64,14 @@ namespace M3ApiClientInterface
                 connectionData = value;
             }
         }
-
-        public virtual Boolean ErrorOnReturnCode8
-        {
-            get { return errorOnReturnCode8; }
-
-            set { errorOnReturnCode8 = value; }
-        }
-
+        
         public virtual Boolean EnableZippedTransactions
         {
             get { return enableZippedTransactions; }
 
             set { enableZippedTransactions = value; }
         }
-
+        
         public virtual Int32 ExecutionAttempts
         {
             get { return executionAttempts; }
@@ -130,20 +123,7 @@ namespace M3ApiClientInterface
                 minimumTimeToWaitBetweenRetries = value;
             }
         }
-
-        public virtual Random Random
-        {
-            get { return random; }
-
-            set
-            {
-                if (value == default(Random))
-                { throw new PropertySetToDefaultException("Random"); }
-
-                random = value;
-            }
-        }
-
+        
         public virtual List<RequestFieldData> RequestFieldDataList
         {
             get { return requestFieldDataList; }
@@ -170,6 +150,13 @@ namespace M3ApiClientInterface
             }
         }
 
+        public virtual Boolean RetryOnErrorCode8
+        {
+            get { return retryOnErrorCode8; }
+
+            set { retryOnErrorCode8 = value; }
+        }
+
         public virtual UInt32? ReturnCode
         {
             get { return returnCode; }
@@ -181,14 +168,12 @@ namespace M3ApiClientInterface
         //INITIALIZE
         public WriterProcessBase()
         {
-            apiData = null;
+            apiData = new ApiData();
 
-            connectionData = null;
+            connectionData = new ConnectionData();
 
             enableZippedTransactions = false;
-
-            errorOnReturnCode8 = true;
-
+            
             executionAttempts = 0;
             
             maximumTimeToWaitBetweenRetries = 30000;
@@ -203,15 +188,11 @@ namespace M3ApiClientInterface
 
             retries = 5;
 
+            retryOnErrorCode8 = false;
+
             returnCode = null;
             
             serverId = default(SERVER_ID);
-        }
-
-        public WriterProcessBase(Random Random)
-            : this()
-        {
-            this.Random = Random;
         }
 
 
@@ -220,7 +201,11 @@ namespace M3ApiClientInterface
         {
             try
             {
-                ExecutionAttempts++;
+                SetApiData();
+
+                SetConnectionData();
+
+                SetRequestFieldData();
 
                 if (ApiData == null)
                 { throw new InvalidOperationException("ApiData can not be null."); }
@@ -233,14 +218,15 @@ namespace M3ApiClientInterface
 
                 if (RequestFieldDataList == null)
                 { throw new InvalidOperationException("RequestFieldDataList can not be null."); }
-
+                
                 if (!ValidateInputs())
                 { return false; }
 
-                if (random == null)
-                { random = new Random(); }
+                random = new Random();
 
                 serverId = new SERVER_ID();
+
+                ExecutionAttempts++;
 
                 if (!ConnectToServer())
                 {
@@ -266,16 +252,25 @@ namespace M3ApiClientInterface
                     return Retry();
                 }
 
-                if (!WriteToServer())
+                if (WriteToServer())
                 {
                     CloseServerConnection();
 
-                    return Retry();
+                    return true;
                 }
+                else
+                {
+                    if ((ReturnCode.Value == 8) && (!RetryOnErrorCode8))
+                    {
+                        CloseServerConnection();
 
-                CloseServerConnection();
+                        return false;
+                    }
 
-                return true;
+                    CloseServerConnection();
+
+                    return Retry();
+                }            
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
@@ -289,33 +284,19 @@ namespace M3ApiClientInterface
         //FUNCTIONS
         protected virtual Boolean CheckReturnCode()
         {
-            String errorText;
-
-            switch (ReturnCode)
+            if (ReturnCode.Value == 0)
             {
-                case 0:
+                return true;
+            }
+            else
+            {
+                Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
 
-                    return true;
+                String errorText = GetErrorText();
 
-                case 8:
+                Trace.WriteLineIf((errorText != null), errorText);
 
-                    Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
-
-                    errorText = GetErrorText();
-
-                    Trace.WriteLineIf((errorText != null), errorText);
-
-                    return (!ErrorOnReturnCode8);
-
-                default:
-
-                    Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
-
-                    errorText = GetErrorText();
-
-                    Trace.WriteLineIf((errorText != null), errorText);
-
-                    return false;
+                return false;
             }
         }
 
@@ -408,7 +389,7 @@ namespace M3ApiClientInterface
         {
             try
             {
-                if (ExecutionAttempts <= Retries)
+                if ((ExecutionAttempts -1) <= Retries)
                 {
                     System.Threading.Thread.Sleep(random.Next(MinimumTimeToWaitBetweenRetries, MaximumTimeToWaitBetweenRetries));
 
@@ -428,6 +409,10 @@ namespace M3ApiClientInterface
 
             return false;
         }
+
+        protected abstract void SetApiData();
+
+        protected abstract void SetConnectionData();
 
         protected virtual Boolean SetEnableZippedTransactions()
         {
@@ -474,7 +459,7 @@ namespace M3ApiClientInterface
 
             return false;
         }
-
+        
         protected virtual Boolean SetRequestField(RequestFieldData requestFieldData)
         {
             try
@@ -492,6 +477,8 @@ namespace M3ApiClientInterface
 
             return false;
         }
+
+        protected abstract void SetRequestFieldData();
 
         protected virtual Boolean SetRequestFields()
         {

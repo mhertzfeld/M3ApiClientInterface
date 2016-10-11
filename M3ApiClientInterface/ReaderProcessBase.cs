@@ -218,8 +218,12 @@ namespace M3ApiClientInterface
         {
             try
             {
-                ExecutionAttempts++;
+                SetApiData();
 
+                SetConnectionData();
+
+                SetRequestFieldData();
+                
                 if (ApiData == null)
                 { throw new InvalidOperationException("ApiData can not be null."); }
 
@@ -228,21 +232,17 @@ namespace M3ApiClientInterface
 
                 if (RequestFieldDataList == null)
                 { throw new InvalidOperationException("RequestFieldDataList can not be null."); }
-
-                random = new Random();
-
-                SetApiData();
-
-                SetConnectionData();
-
-                SetRequestFieldData();
-
+               
                 if (!ValidateInputs())
                 { return false; }
+                
+                random = new Random();
 
                 returnCode = null;
 
                 serverId = new SERVER_ID();
+
+                ExecutionAttempts++;
 
                 if (!ConnectToServer())
                 {
@@ -433,7 +433,7 @@ namespace M3ApiClientInterface
         {
             try
             {
-                if (ExecutionAttempts <= Retries)
+                if ((ExecutionAttempts - 1) <= Retries)
                 {
                     System.Threading.Thread.Sleep(random.Next(MinimumTimeToWaitBetweenRetries, MaximumTimeToWaitBetweenRetries));
 

@@ -86,12 +86,9 @@
   <ItemGroup>
     <Compile Include="ApiData.cs" />
     <Compile Include="ConnectionData.cs" />
-    <Compile Include="DataObjectEnumerableWriterBase.cs" />
-    <Compile Include="DataObjectWriterBase.cs" />
     <Compile Include="TraceUtilities.cs" />
     <Compile Include="WriterProcessBase.cs" />
     <Compile Include="DataObjectCollectionReaderProcessBase.cs" />
-    <Compile Include="DataObjectDictionaryReaderProcessBase.cs" />
     <Compile Include="DataObjectReaderProcessBase.cs" />
     <Compile Include="PropertySetToDefaultException.cs" />
     <Compile Include="PropertySetToOutOfRangeValueException.cs" />
