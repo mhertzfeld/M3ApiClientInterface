@@ -289,7 +289,9 @@ namespace M3ApiClientInterface
                     return Retry();
                 }
 
-                Boolean returnState = ProcessApiResults();
+                Boolean returnState = true;
+                if (ReturnCode.Value == 0)
+                { returnState = ProcessApiResults(); }
 
                 CloseServerConnection();
 
@@ -402,7 +404,7 @@ namespace M3ApiClientInterface
                     
                     if (ErrorOnReturnCode8)
                     {
-                        Trace.WriteLine("The 'MvxSock.Connect' method retured non zero code:" + ReturnCode);
+                        Trace.WriteLine("The 'MvxSock.Access' method retured non zero code:" + ReturnCode);
 
                         String returnCode8ErrorText = GetErrorText();
 
