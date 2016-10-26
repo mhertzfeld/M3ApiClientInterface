@@ -186,7 +186,7 @@ namespace M3ApiClientInterface
 
             requestFieldDataList = new List<RequestFieldData>();
 
-            retries = 5;
+            retries = 0;
 
             retryOnErrorCode8 = false;
 

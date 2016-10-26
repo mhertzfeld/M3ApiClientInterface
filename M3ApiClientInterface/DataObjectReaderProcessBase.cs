@@ -36,15 +36,13 @@ namespace M3ApiClientInterface
             try
             {
                 DataObject = CreateDataObject();
+
+                return true;
             }
             catch (Exception exception)
-            {
-                Trace.WriteLine(exception);
+            { Trace.WriteLine(exception); }
 
-                return false;
-            }
-
-            return true;
+            return false;
         }
     }
 }

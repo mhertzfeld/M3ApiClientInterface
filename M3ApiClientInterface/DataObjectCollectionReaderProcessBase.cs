@@ -48,11 +48,18 @@ namespace M3ApiClientInterface
 
         protected virtual bool ProcessApiResult()
         {
-            T_DataObject dataObject = CreateDataObject();
+            try
+            {
+                T_DataObject dataObject = CreateDataObject();
 
-            AddDataObjectToDataObjectCollection(dataObject);
+                AddDataObjectToDataObjectCollection(dataObject);
 
-            return true;
+                return true;
+            }
+            catch (Exception exception)
+            { Trace.WriteLine(exception); }
+
+            return false;
         }
 
         protected override bool ProcessApiResults()
@@ -79,15 +86,13 @@ namespace M3ApiClientInterface
                         return false;
                     }
                 }
+
+                return true;
             }
             catch (Exception exception)
-            {
-                Trace.WriteLine(exception);
+            { Trace.WriteLine(exception); }
 
-                return false;
-            }
-
-            return true;
+            return false;
         }
     }
 }

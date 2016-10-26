@@ -19,8 +19,10 @@ namespace M3ApiClientInterface
 
         protected Boolean errorOnReturnCode8;
 
-        protected Int32 executionAttempts;
-        
+        protected Int32 executionsAttempted;
+
+        protected Int32 executionsToAttempt;
+
         protected Int64 maximumRecordsToReturn;
 
         protected Int32 maximumTimeToWaitBetweenRetries;
@@ -32,9 +34,7 @@ namespace M3ApiClientInterface
         protected Random random;
 
         protected List<RequestFieldData> requestFieldDataList;
-
-        protected Int32 retries;
-
+        
         protected UInt32? returnCode;
 
         protected SERVER_ID serverId;
@@ -81,16 +81,29 @@ namespace M3ApiClientInterface
             set { enableZippedTransactions = value; }
         }
 
-        public virtual Int32 ExecutionAttempts
+        public virtual Int32 ExecutionsAttempted
         {
-            get { return executionAttempts; }
+            get { return executionsAttempted; }
 
             protected set
             {
                 if (value < 1)
-                { throw new PropertySetToOutOfRangeValueException("ExecutionAttempts"); }
+                { throw new PropertySetToOutOfRangeValueException("ExecutionsAttempted"); }
 
-                executionAttempts = value;
+                executionsAttempted = value;
+            }
+        }
+
+        public virtual Int32 ExecutionsToAttempt
+        {
+            get { return executionsToAttempt; }
+
+            set
+            {
+                if (value < 1)
+                { throw new PropertySetToOutOfRangeValueException("ExecutionsToAttempt"); }
+
+                executionsToAttempt = value;
             }
         }
 
@@ -159,19 +172,6 @@ namespace M3ApiClientInterface
             }
         }
 
-        public virtual Int32 Retries
-        {
-            get { return retries; }
-
-            set
-            {
-                if (value < 0)
-                { throw new PropertySetToOutOfRangeValueException("Retries"); }
-
-                retries = value;
-            }
-        }
-
         public virtual UInt32? ReturnCode
         {
             get { return returnCode; }
@@ -191,7 +191,7 @@ namespace M3ApiClientInterface
 
             errorOnReturnCode8 = true;
 
-            executionAttempts = 0;
+            executionsAttempted = 0;
 
             maximumRecordsToReturn = 0;
 
@@ -201,11 +201,11 @@ namespace M3ApiClientInterface
 
             minimumTimeToWaitBetweenRetries = 5000;
 
-            random = null;
+            random = new Random();
 
             requestFieldDataList = new List<RequestFieldData>();
 
-            retries = 3;
+            executionsToAttempt = 3;
 
             returnCode = null;
 
@@ -218,82 +218,100 @@ namespace M3ApiClientInterface
         {
             try
             {
-                SetApiData();
+                Boolean returnState = false;
 
-                SetConnectionData();
-
-                SetRequestFieldData();
-                
-                if (ApiData == null)
-                { throw new InvalidOperationException("ApiData can not be null."); }
-
-                if (ConnectionData == null)
-                { throw new InvalidOperationException("ConnectionData can not be null."); }
-
-                if (RequestFieldDataList == null)
-                { throw new InvalidOperationException("RequestFieldDataList can not be null."); }
-               
-                if (!ValidateInputs())
-                { return false; }
-                
-                random = new Random();
-
-                returnCode = null;
-
-                serverId = new SERVER_ID();
-
-                ExecutionAttempts++;
-
-                if (!ConnectToServer())
+                while ((ExecutionsAttempted <= ExecutionsToAttempt) && (!returnState))
                 {
-                    CloseServerConnection();
+                    if (ExecutionsAttempted > 1)
+                    {
+                        System.Threading.Thread.Sleep(random.Next(MinimumTimeToWaitBetweenRetries, MaximumTimeToWaitBetweenRetries));
 
-                    return Retry();
-                }
+                        Trace.WriteLine("Attempting to retry the API call.  Execution Attempt:" + ExecutionsAttempted);
+                    }
 
-                if (EnableZippedTransactions)
-                {
-                    if (!SetEnableZippedTransactions())
+                    SetApiData();
+
+                    SetConnectionData();
+
+                    SetRequestFieldData();
+
+                    if (ApiData == null)
+                    { throw new InvalidOperationException("ApiData can not be null."); }
+
+                    if (ConnectionData == null)
+                    { throw new InvalidOperationException("ConnectionData can not be null."); }
+
+                    if (RequestFieldDataList == null)
+                    { throw new InvalidOperationException("RequestFieldDataList can not be null."); }
+
+                    if (!ValidateInputs())
+                    { return false; }
+                    
+                    returnCode = null;
+
+                    serverId = new SERVER_ID();
+
+                    ExecutionsAttempted++;
+
+                    if (!ConnectToServer())
                     {
                         CloseServerConnection();
 
-                        return Retry();
+                        continue;
                     }
-                }
 
-                if (!SetMaximumRecordsForApiToReturn())
-                {
+                    if (EnableZippedTransactions)
+                    {
+                        if (!SetEnableZippedTransactions())
+                        {
+                            CloseServerConnection();
+
+                            continue;
+                        }
+                    }
+
+                    if (!SetMaximumRecordsForApiToReturn())
+                    {
+                        CloseServerConnection();
+
+                        continue;
+                    }
+
+                    if (!SetMaximumWaitTime())
+                    {
+                        CloseServerConnection();
+
+                        continue;
+                    }
+
+                    if (!SetRequestFields())
+                    {
+                        CloseServerConnection();
+
+                        continue;
+                    }
+
+                    if (!ExecuteApi())
+                    {
+                        CloseServerConnection();
+
+                        continue;
+                    }
+
+                    if (ReturnCode.Value == 0)
+                    {
+                        if (!ProcessApiResults())
+                        {
+                            CloseServerConnection();
+
+                            continue;
+                        }
+                    }
+
                     CloseServerConnection();
 
-                    return Retry();
+                    returnState = true;
                 }
-
-                if (!SetMaximumWaitTime())
-                {
-                    CloseServerConnection();
-
-                    return Retry();
-                }
-
-                if (!SetRequestFields())
-                {
-                    CloseServerConnection();
-
-                    return Retry();
-                }
-
-                if (!ExecuteApi())
-                {
-                    CloseServerConnection();
-
-                    return Retry();
-                }
-
-                Boolean returnState = true;
-                if (ReturnCode.Value == 0)
-                { returnState = ProcessApiResults(); }
-
-                CloseServerConnection();
 
                 return returnState;
             }
@@ -369,29 +387,6 @@ namespace M3ApiClientInterface
             return false;
         }
 
-        protected virtual String GetErrorText()
-        {
-            String errorText;
-
-            try
-            {
-                errorText = Lawson.M3.MvxSock.MvxSock.GetLastError(ref serverId).Trim();
-
-                return (errorText.Length == 0 ? null : errorText);
-            }
-            catch (Exception exception)
-            { Trace.WriteLine(exception.ToString()); }
-
-            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
-
-            return null;            
-        }
-
-        protected virtual String GetValueFromField(String fieldName)
-        {
-            return MvxSock.GetField(ref serverId, fieldName);
-        }
-
         protected virtual Boolean EvaluateMvxSockAccessReturnCode()
         {
             switch (ReturnCode.Value)
@@ -401,7 +396,7 @@ namespace M3ApiClientInterface
                     return true;
 
                 case 8:
-                    
+
                     if (ErrorOnReturnCode8)
                     {
                         Trace.WriteLine("The 'MvxSock.Access' method retured non zero code:" + ReturnCode);
@@ -429,33 +424,31 @@ namespace M3ApiClientInterface
             }
         }
 
-        protected abstract Boolean ProcessApiResults();
-        
-        protected virtual Boolean Retry()
+        protected virtual String GetErrorText()
         {
+            String errorText;
+
             try
             {
-                if ((ExecutionAttempts - 1) <= Retries)
-                {
-                    System.Threading.Thread.Sleep(random.Next(MinimumTimeToWaitBetweenRetries, MaximumTimeToWaitBetweenRetries));
+                errorText = Lawson.M3.MvxSock.MvxSock.GetLastError(ref serverId).Trim();
 
-                    Trace.WriteLine("Attempting to retry the API call.  Execution Attempt:" + ExecutionAttempts);
-
-                    return ExecuteProcess();
-                }
-                else
-                {
-                    return false;
-                }
+                return (errorText.Length == 0 ? null : errorText);
             }
             catch (Exception exception)
-            { Trace.WriteLine(exception); }
+            { Trace.WriteLine(exception.ToString()); }
 
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
-            return false;
+            return null;            
         }
 
+        protected virtual String GetValueFromField(String fieldName)
+        {
+            return MvxSock.GetField(ref serverId, fieldName);
+        }
+
+        protected abstract Boolean ProcessApiResults();
+        
         protected abstract void SetApiData();
 
         protected abstract void SetConnectionData();
