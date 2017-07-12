@@ -8,29 +8,19 @@ using System.Text;
 
 namespace M3ApiClientInterface
 {
-    public abstract class WriterProcessBase
+    public class WriterProcess
     {
         //FIELDS
         protected ApiData apiData;
 
         protected ConnectionData connectionData;
         
-        protected Int32 executionAttempts;
-
-        protected Int32 maximumTimeToWaitBetweenRetries;
-
         protected UInt32 maximumWaitTime;
+        
+        protected List<RequestFieldData> _InputFieldDataList;
 
-        protected Int32 minimumTimeToWaitBetweenRetries;
-
-        protected Random random;
-
-        protected List<RequestFieldData> requestFieldDataList;
-
-        protected Int32 retries;
-
-        protected Boolean retryOnErrorCode8;
-
+        protected List<OutputFieldData> _OutputFieldData;
+        
         protected UInt32? returnCode;
 
         protected SERVER_ID serverId;
@@ -62,33 +52,7 @@ namespace M3ApiClientInterface
                 connectionData = value;
             }
         }
-                
-        public virtual Int32 ExecutionAttempts
-        {
-            get { return executionAttempts; }
-
-            protected set
-            {
-                if (value < 1)
-                { throw new PropertySetToOutOfRangeValueException("ExecutionAttempts"); }
-
-                executionAttempts = value;
-            }
-        }
-
-        public virtual Int32 MaximumTimeToWaitBetweenRetries
-        {
-            get { return maximumTimeToWaitBetweenRetries; }
-
-            set
-            {
-                if (value <= 1000)
-                { throw new PropertySetToOutOfRangeValueException("MaximumTimeToWaitBetweenRetries"); }
-
-                maximumTimeToWaitBetweenRetries = value;
-            }
-        }
-
+        
         public virtual UInt32 MaximumWaitTime
         {
             get { return maximumWaitTime; }
@@ -101,51 +65,31 @@ namespace M3ApiClientInterface
                 maximumWaitTime = value;
             }
         }
-
-        public virtual Int32 MinimumTimeToWaitBetweenRetries
-        {
-            get { return minimumTimeToWaitBetweenRetries; }
-
-            set
-            {
-                if (value < 500)
-                { throw new PropertySetToOutOfRangeValueException("MinimumTimeToWaitBetweenRetries"); }
-
-                minimumTimeToWaitBetweenRetries = value;
-            }
-        }
         
-        public virtual List<RequestFieldData> RequestFieldDataList
+        public virtual List<RequestFieldData> InputFieldDataList
         {
-            get { return requestFieldDataList; }
+            get { return _InputFieldDataList; }
 
             set
             {
                 if (value == default(List<RequestFieldData>))
-                { throw new PropertySetToDefaultException("RequestFieldDataList"); }
+                { throw new PropertySetToDefaultException("InputFieldDataList"); }
 
-                requestFieldDataList = value;
+                _InputFieldDataList = value;
             }
         }
 
-        public virtual Int32 Retries
+        public virtual List<OutputFieldData> OutputFieldData
         {
-            get { return retries; }
+            get { return _OutputFieldData; }
 
             set
             {
-                if (value < 0)
-                { throw new PropertySetToOutOfRangeValueException("Retries"); }
+                if (value == default(List<OutputFieldData>))
+                { throw new PropertySetToDefaultException("OutputFieldData"); }
 
-                retries = value;
+                _OutputFieldData = value;
             }
-        }
-
-        public virtual Boolean RetryOnErrorCode8
-        {
-            get { return retryOnErrorCode8; }
-
-            set { retryOnErrorCode8 = value; }
         }
 
         public virtual UInt32? ReturnCode
@@ -157,28 +101,18 @@ namespace M3ApiClientInterface
 
         
         //INITIALIZE
-        public WriterProcessBase()
+        public WriterProcess()
         {
             apiData = new ApiData();
 
             connectionData = new ConnectionData();
             
-            executionAttempts = 0;
-            
-            maximumTimeToWaitBetweenRetries = 30000;
-
             maximumWaitTime = 30000;
+            
+            _InputFieldDataList = new List<RequestFieldData>();
 
-            minimumTimeToWaitBetweenRetries = 5000;
-
-            random = null;
-
-            requestFieldDataList = new List<RequestFieldData>();
-
-            retries = 0;
-
-            retryOnErrorCode8 = false;
-
+            _OutputFieldData = new List<OutputFieldData>();
+            
             returnCode = null;
             
             serverId = default(SERVER_ID);
@@ -190,66 +124,80 @@ namespace M3ApiClientInterface
         {
             try
             {
-                SetApiData();
-
-                SetConnectionData();
-
-                SetRequestFieldData();
-
                 if (ApiData == null)
-                { throw new InvalidOperationException("ApiData can not be null."); }
+                { throw new InvalidOperationException("'ApiData' cannot be null."); }
+
+                if (ApiData.Api == null)
+                { throw new InvalidOperationException("'ApiData.Api' cannot be null"); }
 
                 if (ConnectionData == null)
-                { throw new InvalidOperationException("ConnectionData can not be null."); }
+                { throw new InvalidOperationException("'ConnectionData' cannot be null."); }
 
-                if (MaximumWaitTime <= 0)
-                { throw new InvalidOperationException("MaximumWaitTime is not in range."); }
+                if (ConnectionData.Password == null)
+                { throw new InvalidOperationException("'ConnectionData.Password' cannot be null."); }
 
-                if (RequestFieldDataList == null)
-                { throw new InvalidOperationException("RequestFieldDataList can not be null."); }
+                if (ConnectionData.Port == 0)
+                { throw new InvalidOperationException("'ConnectionData.Port' cannot be 0."); }
+
+                if (ConnectionData.Server == null)
+                { throw new InvalidOperationException("'ConnectionData.Server' cannot be null."); }
+
+                if (ConnectionData.UserName == null)
+                { throw new InvalidOperationException("'ConnectionData.UserName' cannot be null."); }
+
+                if (InputFieldDataList == null)
+                { throw new InvalidOperationException("RequestFieldDataList cannot be null."); }
+
+                if (InputFieldDataList.Count == 0)
+                { throw new InvalidOperationException("RequestFieldDataList.Count cannot be 0."); }
                 
-                if (!ValidateInputs())
-                { return false; }
-
-                random = new Random();
-
                 serverId = new SERVER_ID();
-
-                ExecutionAttempts++;
-
+                
                 if (!ConnectToServer())
                 {
                     CloseServerConnection();
 
-                    return Retry();
+                    return false;
                 }
                 
                 if (!SetMaximumWaitTime())
                 {
                     CloseServerConnection();
 
-                    return Retry();
+                    return false;
                 }
 
-                if (WriteToServer())
+                if (!SetRequestFields())
                 {
                     CloseServerConnection();
 
-                    return true;
+                    return false;
                 }
-                else
+
+                if (!ExecuteApi())
                 {
-                    if ((ReturnCode.Value == 8) && (!RetryOnErrorCode8))
-                    {
-                        CloseServerConnection();
-
-                        return false;
-                    }
-
                     CloseServerConnection();
 
-                    return Retry();
-                }            
+                    return false;
+                }
+
+                if (!CheckReturnCode())
+                {
+                    CloseServerConnection();
+
+                    return false;
+                }
+
+                if (!GetOutputFieldData())
+                {
+                    CloseServerConnection();
+
+                    return false;
+                }
+
+                CloseServerConnection();
+
+                return true;
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
@@ -359,53 +307,19 @@ namespace M3ApiClientInterface
             return null;
         }
 
-        protected virtual String GetValueFromField(String fieldName)
-        {
-            return MvxSock.GetField(ref serverId, fieldName);
-        }
-
-        protected virtual Boolean Retry()
+        protected virtual Boolean GetOutputFieldData()
         {
             try
             {
-                if ((ExecutionAttempts -1) <= Retries)
+                foreach (OutputFieldData _OutputFieldData in OutputFieldData)
                 {
-                    System.Threading.Thread.Sleep(random.Next(MinimumTimeToWaitBetweenRetries, MaximumTimeToWaitBetweenRetries));
-
-                    Trace.WriteLine("Attempting to retry the API call.  " + ExecutionAttempts);
-
-                    return ExecuteProcess();
+                    _OutputFieldData.Value = GetValueFromField(_OutputFieldData.FieldName);
                 }
-                else
-                {
-                    return false;
-                }
-            }
-            catch (Exception exception)
-            { Trace.WriteLine(exception); }
 
-            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
-
-            return false;
-        }
-
-        protected abstract void SetApiData();
-
-        protected abstract void SetConnectionData();
-
-        protected virtual Boolean SetEnableZippedTransactions()
-        {
-            try
-            {
-                ReturnCode = MvxSock.SetZippedTransactions(ref serverId, 1);
-
-                if (ReturnCode.GetValueOrDefault() == 0)
-                { return true; }
+                return true;
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
-
-            Trace.WriteLine("The 'MvxSock.SetZippedTransactions' method retured the following non zero code.  " + ReturnCode);
 
             String errorText = GetErrorText();
 
@@ -416,6 +330,11 @@ namespace M3ApiClientInterface
             return false;
         }
 
+        protected virtual String GetValueFromField(String fieldName)
+        {
+            return MvxSock.GetField(ref serverId, fieldName);
+        }
+        
         protected virtual Boolean SetMaximumWaitTime()
         {
             try
@@ -456,14 +375,12 @@ namespace M3ApiClientInterface
 
             return false;
         }
-
-        protected abstract void SetRequestFieldData();
-
+        
         protected virtual Boolean SetRequestFields()
         {
             try
             {
-                foreach (RequestFieldData requestField in RequestFieldDataList)
+                foreach (RequestFieldData requestField in InputFieldDataList)
                 {
                     if (!SetRequestField(requestField))
                     { return false; }
@@ -477,67 +394,6 @@ namespace M3ApiClientInterface
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
             return false;
-        }
-
-        protected virtual Boolean ValidateInputs()
-        {
-            if ((ApiData.Api == null) || (ApiData.Api.Length < 8))
-            {
-                Trace.WriteLine("'ApiData.Api' has failed validation.");
-
-                return false; 
-            }
-
-            if ((ApiData.Method == null) || (ApiData.Method.Length == 0))
-            {
-                Trace.WriteLine("'ApiData.Method' has failed validation.");
-
-                return false; 
-            }
-
-            if (ConnectionData.Password == null)
-            {
-                Trace.WriteLine("'ConnectionData.Password' has failed validation.");
-
-                return false;
-            }
-
-            if (ConnectionData.Port < 1)
-            {
-                Trace.WriteLine("'ConnectionData.Port' has failed validation.");
-
-                return false;
-            }
-
-            if ((ConnectionData.Server == null) || (ConnectionData.Server.Length == 0))
-            {
-                Trace.WriteLine("'ConnectionData.Server' has failed validation.");
-
-                return false;
-            }
-
-            if ((ConnectionData.UserName == null) || (ConnectionData.UserName.Length == 0))
-            {
-                Trace.WriteLine("'ConnectionData.UserName' has failed validation.");
-
-                return false;
-            }
-
-            return true;
-        }
-
-        protected virtual Boolean WriteToServer()
-        {
-            if (!SetRequestFields())
-            { return false; }
-
-            if (!ExecuteApi())
-            { return false; }
-
-            if (!CheckReturnCode())
-            { return false; }
-
-            return true;
         }
     }
 }

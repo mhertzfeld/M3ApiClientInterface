@@ -86,8 +86,9 @@
   <ItemGroup>
     <Compile Include="ApiData.cs" />
     <Compile Include="ConnectionData.cs" />
+    <Compile Include="OutputFieldData.cs" />
     <Compile Include="TraceUtilities.cs" />
-    <Compile Include="WriterProcessBase.cs" />
+    <Compile Include="WriterProcess.cs" />
     <Compile Include="DataObjectCollectionReaderProcessBase.cs" />
     <Compile Include="DataObjectReaderProcessBase.cs" />
     <Compile Include="PropertySetToDefaultException.cs" />

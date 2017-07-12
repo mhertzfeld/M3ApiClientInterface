@@ -8,7 +8,7 @@ namespace M3ApiClientInterface
         //FIELDS
         protected String password;
 
-        protected Int32 port;
+        protected UInt16 port;
 
         protected String server;        
 
@@ -29,13 +29,13 @@ namespace M3ApiClientInterface
             }
         }
 
-        public Int32 Port
+        public UInt16 Port
         {
             get { return port; }
 
             set
             {
-                if (value < 1)
+                if (value == 0)
                 { throw new PropertySetToOutOfRangeValueException("Port"); }
 
                 port = value;
@@ -79,17 +79,6 @@ namespace M3ApiClientInterface
             server = null;
 
             userName = null;
-        }
-
-        public ConnectionData(String Server, Int32 Port, String UserName, String Password)
-        {
-            this.Password = Password;
-
-            this.Port = Port;
-
-            this.Server = Server;
-
-            this.UserName = UserName;
         }
     }
 }

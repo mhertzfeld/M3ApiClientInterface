@@ -46,12 +46,5 @@ namespace M3ApiClientInterface
 
             method = null;
         }
-
-        public ApiData(String Api, String Method)
-        {
-            this.Api = Api;
-
-            this.Method = Method;
-        }
     }
 }
