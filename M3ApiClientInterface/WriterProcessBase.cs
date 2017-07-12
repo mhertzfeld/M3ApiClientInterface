@@ -14,8 +14,6 @@ namespace M3ApiClientInterface
         protected ApiData apiData;
 
         protected ConnectionData connectionData;
-
-        protected Boolean enableZippedTransactions;
         
         protected Int32 executionAttempts;
 
@@ -64,14 +62,7 @@ namespace M3ApiClientInterface
                 connectionData = value;
             }
         }
-        
-        public virtual Boolean EnableZippedTransactions
-        {
-            get { return enableZippedTransactions; }
-
-            set { enableZippedTransactions = value; }
-        }
-        
+                
         public virtual Int32 ExecutionAttempts
         {
             get { return executionAttempts; }
@@ -171,8 +162,6 @@ namespace M3ApiClientInterface
             apiData = new ApiData();
 
             connectionData = new ConnectionData();
-
-            enableZippedTransactions = false;
             
             executionAttempts = 0;
             
@@ -234,17 +223,7 @@ namespace M3ApiClientInterface
 
                     return Retry();
                 }
-
-                if (EnableZippedTransactions)
-                {
-                    if (!SetEnableZippedTransactions())
-                    {
-                        CloseServerConnection();
-
-                        return Retry();
-                    }
-                }
-
+                
                 if (!SetMaximumWaitTime())
                 {
                     CloseServerConnection();
