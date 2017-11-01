@@ -1,12 +1,11 @@
-﻿using Lawson.M3.MvxSock;
-using System;
+﻿using System;
 using System.Diagnostics;
 
 
 namespace M3ApiClientInterface
 {
     public abstract class DataObjectReaderProcessBase<T_DataObject>
-        : ReaderProcessBase
+        : ReaderProcessBase, DataObjectReaderInterface<T_DataObject>
     {
         //FIELDS
         protected T_DataObject dataObject;

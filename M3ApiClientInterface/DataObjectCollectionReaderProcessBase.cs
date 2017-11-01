@@ -6,7 +6,7 @@ using System.Diagnostics;
 namespace M3ApiClientInterface
 {
     public abstract class DataObjectCollectionReaderProcessBase<T_DataObject, T_DataObjectCollection>
-        : ReaderProcessBase
+        : ReaderProcessBase, DataObjectCollectionReaderInterface<T_DataObject, T_DataObjectCollection>
         where T_DataObjectCollection : System.Collections.Generic.ICollection<T_DataObject>, new()
     {
         //FIELDS

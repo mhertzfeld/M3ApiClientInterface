@@ -9,6 +9,7 @@ using System.Text;
 namespace M3ApiClientInterface
 {
     public abstract class ReaderProcessBase
+        : ReaderProcessInterface
     {
         //FIELDS
         protected ApiData apiData;
@@ -19,17 +20,17 @@ namespace M3ApiClientInterface
 
         protected Boolean errorOnReturnCode8;
 
-        protected Int32 executionsAttempted;
+        protected UInt16 executionsAttempted;
 
-        protected Int32 executionsToAttempt;
+        protected UInt16 executionsToAttempt;
 
-        protected Int64 maximumRecordsToReturn;
+        protected UInt64 maximumRecordsToReturn;
 
-        protected Int32 maximumTimeToWaitBetweenRetries;
+        protected UInt32 maximumTimeToWaitBetweenRetries;
 
         protected UInt32 maximumWaitTime;
 
-        protected Int32 minimumTimeToWaitBetweenRetries; 
+        protected UInt32 minimumTimeToWaitBetweenRetries; 
 
         protected Random random;
 
@@ -81,53 +82,35 @@ namespace M3ApiClientInterface
             set { enableZippedTransactions = value; }
         }
 
-        public virtual Int32 ExecutionsAttempted
+        public virtual UInt16 ExecutionsAttempted
         {
             get { return executionsAttempted; }
 
-            protected set
-            {
-                if (value < 1)
-                { throw new PropertySetToOutOfRangeValueException("ExecutionsAttempted"); }
-
-                executionsAttempted = value;
-            }
+            protected set { executionsAttempted = value; }
         }
 
-        public virtual Int32 ExecutionsToAttempt
+        public virtual UInt16 ExecutionsToAttempt
         {
             get { return executionsToAttempt; }
 
-            set
-            {
-                if (value < 1)
-                { throw new PropertySetToOutOfRangeValueException("ExecutionsToAttempt"); }
-
-                executionsToAttempt = value;
-            }
+            set { executionsToAttempt = value; }
         }
 
-        public virtual Int64 MaximumRecordsToReturn
+        public virtual UInt64 MaximumRecordsToReturn
         {
             get { return maximumRecordsToReturn; }
 
-            set
-            {
-                if (value < 0)
-                { throw new PropertySetToOutOfRangeValueException("MaximumRecordsToReturn"); }
-
-                maximumRecordsToReturn = value;
-            }
+            set { maximumRecordsToReturn = value; }
         }
 
-        public virtual Int32 MaximumTimeToWaitBetweenRetries
+        public virtual UInt32 MaximumTimeToWaitBetweenRetries
         {
             get { return maximumTimeToWaitBetweenRetries; }
 
             set
             {
-                if (value <= 1000)
-                { throw new PropertySetToOutOfRangeValueException("MaximumTimeToWaitBetweenRetries"); }
+                if (value <= 500)
+                { throw new PropertySetToOutOfRangeValueException("MaximumTimeToWaitBetweenRetries cannot be set to less than 500."); }
 
                 maximumTimeToWaitBetweenRetries = value;
             }
@@ -137,23 +120,17 @@ namespace M3ApiClientInterface
         {
             get { return maximumWaitTime; }
 
-            set
-            {
-                if (value < 0)
-                { throw new PropertySetToOutOfRangeValueException("MaximumWaitTime"); }
-
-                maximumWaitTime = value;
-            }
+            set { maximumWaitTime = value; }
         }
 
-        public virtual Int32 MinimumTimeToWaitBetweenRetries
+        public virtual UInt32 MinimumTimeToWaitBetweenRetries
         {
             get { return minimumTimeToWaitBetweenRetries; }
 
             set
             {
-                if (value < 500)
-                { throw new PropertySetToOutOfRangeValueException("MinimumTimeToWaitBetweenRetries"); }
+                if (value < 250)
+                { throw new PropertySetToOutOfRangeValueException("MinimumTimeToWaitBetweenRetries cannot be set to less than 250."); }
 
                 minimumTimeToWaitBetweenRetries = value;
             }
@@ -189,7 +166,7 @@ namespace M3ApiClientInterface
 
             enableZippedTransactions = false;
 
-            errorOnReturnCode8 = true;
+            errorOnReturnCode8 = false;
 
             executionsAttempted = 0;
 
@@ -224,20 +201,14 @@ namespace M3ApiClientInterface
                 {
                     if (ExecutionsAttempted > 1)
                     {
-                        System.Threading.Thread.Sleep(random.Next(MinimumTimeToWaitBetweenRetries, MaximumTimeToWaitBetweenRetries));
+                        System.Threading.Thread.Sleep(random.Next((Int32)MinimumTimeToWaitBetweenRetries, (Int32)MaximumTimeToWaitBetweenRetries));
 
                         Trace.WriteLine("Attempting to retry the API call.  Execution Attempt:" + ExecutionsAttempted);
                     }
-
-                    SetApiData();
-
-                    SetConnectionData();
-
-                    SetRequestFieldData();
-
+                    
                     if (ApiData == null)
                     { throw new InvalidOperationException("ApiData can not be null."); }
-
+                    
                     if (ConnectionData == null)
                     { throw new InvalidOperationException("ConnectionData can not be null."); }
 
@@ -449,10 +420,6 @@ namespace M3ApiClientInterface
 
         protected abstract Boolean ProcessApiResults();
         
-        protected abstract void SetApiData();
-
-        protected abstract void SetConnectionData();
-
         protected virtual Boolean SetEnableZippedTransactions()
         {
             try
@@ -542,11 +509,6 @@ namespace M3ApiClientInterface
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
             return false;
-        }
-
-        protected virtual void SetRequestFieldData()
-        {
-            
         }
 
         protected virtual Boolean SetRequestFields()

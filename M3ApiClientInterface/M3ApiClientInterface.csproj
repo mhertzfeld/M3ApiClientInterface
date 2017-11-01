@@ -86,7 +86,13 @@
   <ItemGroup>
     <Compile Include="ApiData.cs" />
     <Compile Include="ConnectionData.cs" />
+    <Compile Include="DataObjectCollectionReaderInterface.cs" />
+    <Compile Include="DataObjectCollectionReaderProcess.cs" />
+    <Compile Include="DataObjectInterface.cs" />
+    <Compile Include="DataObjectReaderInterface.cs" />
+    <Compile Include="DataObjectReaderProcess.cs" />
     <Compile Include="OutputFieldData.cs" />
+    <Compile Include="ReaderProcessInterface.cs" />
     <Compile Include="TraceUtilities.cs" />
     <Compile Include="WriterProcess.cs" />
     <Compile Include="DataObjectCollectionReaderProcessBase.cs" />
