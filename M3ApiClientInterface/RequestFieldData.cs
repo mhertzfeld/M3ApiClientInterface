@@ -29,7 +29,13 @@ namespace M3ApiClientInterface
         {
             get { return fieldValue; }
 
-            set { fieldValue = value; }
+            set
+            {
+                if (value == default(String))
+                { throw new PropertySetToDefaultException("FieldValue"); }
+
+                fieldValue = value;
+            }
         }
 
 

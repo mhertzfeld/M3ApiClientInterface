@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
-using System.Text;
 
 
 namespace M3ApiClientInterface
@@ -180,14 +179,7 @@ namespace M3ApiClientInterface
 
                     return false;
                 }
-
-                if (!CheckReturnCode())
-                {
-                    CloseServerConnection();
-
-                    return false;
-                }
-
+                
                 if (!GetOutputFieldData())
                 {
                     CloseServerConnection();
@@ -209,37 +201,19 @@ namespace M3ApiClientInterface
         
 
         //FUNCTIONS
-        protected virtual Boolean CheckReturnCode()
-        {
-            if (ReturnCode.Value == 0)
-            {
-                return true;
-            }
-            else
-            {
-                Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
-
-                String errorText = GetErrorText();
-
-                Trace.WriteLineIf((errorText != null), errorText);
-
-                return false;
-            }
-        }
-
         protected virtual Boolean CloseServerConnection()
         {
             try
             {
                 ReturnCode = MvxSock.Close(ref serverId);
 
-                if (ReturnCode.GetValueOrDefault() == 0)
+                if (ReturnCode.Value == 0)
                 { return true; }
+                else
+                { Trace.WriteLine(String.Format("The 'MvxSock.Close' method retured the following non zero code.  {0}", ReturnCode)); }
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
-
-            Trace.WriteLine("The 'MvxSock.Close' method retured the following non zero code.  " + ReturnCode);
 
             String errorText = GetErrorText();
 
@@ -256,20 +230,20 @@ namespace M3ApiClientInterface
             {
                 ReturnCode = MvxSock.Connect(ref serverId, ConnectionData.Server, ConnectionData.Port, ConnectionData.UserName, ConnectionData.Password, ApiData.Api, null);
 
-                if (ReturnCode.GetValueOrDefault() == 0)
+                if (ReturnCode.Value == 0)
                 { return true; }
+                else
+                { Trace.WriteLine(String.Format("The 'MvxSock.Connect' method retured the following non zero code.  {0}", ReturnCode)); }
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
-
-            Trace.WriteLine("The 'MvxSock.Connect' method retured the following non zero code.  " + ReturnCode);
-
+            
             String errorText = GetErrorText();
 
             Trace.WriteLineIf((errorText != null), errorText);
 
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
-            
+
             return false;
         }
 
@@ -279,13 +253,16 @@ namespace M3ApiClientInterface
             {
                 ReturnCode = MvxSock.Access(ref serverId, ApiData.Method);
 
-                return true;
+                if (ReturnCode.Value == 0)
+                { return true; }
+                else
+                { Trace.WriteLine(String.Format("The 'MvxSock.Access' method retured the following non zero code.  {0}", ReturnCode)); }
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
 
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
-            
+
             return false;
         }
 
@@ -295,7 +272,7 @@ namespace M3ApiClientInterface
 
             try
             {
-                errorText = Lawson.M3.MvxSock.MvxSock.GetLastError(ref serverId).Trim();
+                errorText = MvxSock.GetLastError(ref serverId).Trim();
 
                 return (errorText.Length == 0 ? null : errorText);
             }
@@ -341,14 +318,14 @@ namespace M3ApiClientInterface
             {
                 ReturnCode = MvxSock.SetMaxWait(ref serverId, MaximumWaitTime);
 
-                if (ReturnCode.GetValueOrDefault() == 0)
+                if (ReturnCode.Value == 0)
                 { return true; }
+                else
+                { Trace.WriteLine(String.Format("The 'MvxSock.SetMaxWait' method retured the following non zero code.  {0}", ReturnCode)); }
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
-
-            Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured the following non zero code.  " + ReturnCode);
-
+            
             String errorText = GetErrorText();
 
             Trace.WriteLineIf((errorText != null), errorText);
