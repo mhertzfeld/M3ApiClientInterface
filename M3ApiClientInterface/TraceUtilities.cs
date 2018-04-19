@@ -9,7 +9,7 @@ namespace M3ApiClientInterface
     {
         public static void WriteMethodError(MethodBase methodBase)
         {
-            Trace.WriteLine("An error occured within '" + String.Format("{0}.{1}.{2}()", methodBase.ReflectedType.Namespace, methodBase.ReflectedType.Name, methodBase.Name) + ".");
+            Trace.WriteLine(string.Format("An error occured within '{0}.{1}.{2}()'.", methodBase.ReflectedType.Namespace, methodBase.ReflectedType.Name, methodBase.Name));
         }
     }
 }

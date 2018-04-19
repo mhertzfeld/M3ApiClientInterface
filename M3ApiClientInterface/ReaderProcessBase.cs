@@ -203,7 +203,7 @@ namespace M3ApiClientInterface
                     {
                         System.Threading.Thread.Sleep(random.Next((Int32)MinimumTimeToWaitBetweenRetries, (Int32)MaximumTimeToWaitBetweenRetries));
 
-                        Trace.WriteLine("Attempting to retry the API call.  Execution Attempt:" + ExecutionsAttempted);
+                        Trace.WriteLine(String.Format("Attempting to retry the API call.  Execution Attempt:{0}", ExecutionsAttempted));
                     }
                     
                     if (ApiData == null)
@@ -302,13 +302,13 @@ namespace M3ApiClientInterface
             {
                 ReturnCode = MvxSock.Close(ref serverId);
 
-                if (ReturnCode == 0)
+                if (ReturnCode.Value == 0)
                 { return true; }
+                else
+                { Trace.WriteLine(String.Format("The 'MvxSock.Close' method retured non zero code:{0}", ReturnCode)); }
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
-
-            Trace.WriteLine("The 'MvxSock.Close' method retured non zero code:" + ReturnCode);
 
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
@@ -323,18 +323,20 @@ namespace M3ApiClientInterface
             {
                 ReturnCode = MvxSock.Connect(ref serverId, ConnectionData.Server, ConnectionData.Port, ConnectionData.UserName, ConnectionData.Password, ApiData.Api, null);
 
-                if (ReturnCode == 0)
+                if (ReturnCode.Value == 0)
                 { return true; }
+                else
+                {
+                    Trace.WriteLine(String.Format("The 'MvxSock.Connect' method retured non zero code:{0}", ReturnCode));
+
+                    String errorText = GetErrorText();
+
+                    Trace.WriteLineIf((errorText != null), errorText);
+                }
             }
             catch (Exception exception)
             { Trace.WriteLine(exception.ToString()); }
-
-            Trace.WriteLine("The 'MvxSock.Connect' method retured non zero code:" + ReturnCode);
-
-            String errorText = GetErrorText();
-
-            Trace.WriteLineIf((errorText != null), errorText);
-
+            
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
             return false;
@@ -370,7 +372,7 @@ namespace M3ApiClientInterface
 
                     if (ErrorOnReturnCode8)
                     {
-                        Trace.WriteLine("The 'MvxSock.Access' method retured non zero code:" + ReturnCode);
+                        Trace.WriteLine(String.Format("The 'MvxSock.Access' method retured non zero code:{0}.", ReturnCode));
 
                         String returnCode8ErrorText = GetErrorText();
 
@@ -385,7 +387,7 @@ namespace M3ApiClientInterface
 
                 default:
 
-                    Trace.WriteLine("The 'MvxSock.Access' method retured non zero code:" + ReturnCode);
+                    Trace.WriteLine(String.Format("The 'MvxSock.Access' method retured non zero code:{0}.", ReturnCode));
 
                     String errorText = GetErrorText();
 
@@ -401,7 +403,7 @@ namespace M3ApiClientInterface
 
             try
             {
-                errorText = Lawson.M3.MvxSock.MvxSock.GetLastError(ref serverId).Trim();
+                errorText = MvxSock.GetLastError(ref serverId).Trim();
 
                 return (errorText.Length == 0 ? null : errorText);
             }
@@ -426,17 +428,19 @@ namespace M3ApiClientInterface
             {
                 ReturnCode = MvxSock.SetZippedTransactions(ref serverId, 1);
 
-                if (ReturnCode == 0)
+                if (ReturnCode.Value == 0)
                 { return true; }
+                else
+                {
+                    Trace.WriteLine(String.Format("The 'MvxSock.SetZippedTransactions' method retured non zero code:{0}.", ReturnCode));
+
+                    String errorText = GetErrorText();
+
+                    Trace.WriteLineIf((errorText != null), errorText);
+                }
             }
             catch (Exception exception)
             { Trace.WriteLine(exception); }
-
-            Trace.WriteLine("The 'MvxSock.SetZippedTransactions' method retured non zero code:" + ReturnCode);
-
-            String errorText = GetErrorText();
-
-            Trace.WriteLineIf((errorText != null), errorText);
 
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
@@ -449,21 +453,23 @@ namespace M3ApiClientInterface
             {
                 StringBuilder stringBuilder = new StringBuilder();
 
-                UInt32 test = 128;
+                UInt32 size = 128;
+                
+                ReturnCode = MvxSock.Trans(ref serverId, String.Format("SetLstMaxRec   {0}", MaximumRecordsToReturn.ToString()), stringBuilder, ref size);
 
-                ReturnCode = MvxSock.Trans(ref serverId, "SetLstMaxRec   " + MaximumRecordsToReturn.ToString(), stringBuilder, ref test);
-
-                if (ReturnCode == 0)
+                if (ReturnCode.Value == 0)
                 { return true; }
+                else
+                {
+                    Trace.WriteLine(String.Format("The 'MvxSock.Trans' method retured non zero code:{0}.", ReturnCode));
+
+                    String errorText = GetErrorText();
+
+                    Trace.WriteLineIf((errorText != null), errorText);
+                }
             }
             catch (Exception exception)
             { Trace.WriteLine(exception); }
-
-            Trace.WriteLine("The 'MvxSock.Trans' method retured non zero code:" + ReturnCode);
-
-            String errorText = GetErrorText();
-
-            Trace.WriteLineIf((errorText != null), errorText);
 
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
@@ -476,17 +482,19 @@ namespace M3ApiClientInterface
             {
                 ReturnCode = MvxSock.SetMaxWait(ref serverId, MaximumWaitTime);
 
-                if (ReturnCode == 0)
+                if (ReturnCode.Value == 0)
                 { return true; }
+                else
+                {
+                    Trace.WriteLine(String.Format("The 'MvxSock.SetMaxWait' method retured non zero code:{0}.", ReturnCode));
+
+                    String errorText = GetErrorText();
+
+                    Trace.WriteLineIf((errorText != null), errorText);
+                }
             }
             catch (Exception exception)
             { Trace.WriteLine(exception); }
-
-            Trace.WriteLine("The 'MvxSock.SetMaxWait' method retured non zero code:" + ReturnCode);
-
-            String errorText = GetErrorText();
-
-            Trace.WriteLineIf((errorText != null), errorText);
 
             TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
@@ -533,53 +541,28 @@ namespace M3ApiClientInterface
 
         protected virtual Boolean ValidateInputs()
         {
-            if ((ApiData.Api.Length < 8) || (ApiData.Method.Length == 0))
+            if ((ApiData.Api == null) || (ApiData.Method == null))
             {
-                Trace.WriteLine("'ApiData.Api' has failed validation.");
+                Trace.WriteLine("'ApiData' Property has failed validation.");
 
                 return false; 
             }
 
-            if (ConnectionData.Password == null)
+            if ((ConnectionData.Password == null) || (ConnectionData.Port == 0) || (ConnectionData.Server == null) || (ConnectionData.UserName == null))
             {
-                Trace.WriteLine("'ConnectionData.Password' has failed validation.");
+                Trace.WriteLine("'ConnectionData' Property has failed validation.");
 
                 return false;
             }
-
-            if (ConnectionData.Port < 1)
+            
+            foreach (RequestFieldData _RequestFieldData in RequestFieldDataList)
             {
-                Trace.WriteLine("'ConnectionData.Port' has failed validation.");
+                if ((_RequestFieldData.FieldName == null) || (_RequestFieldData.FieldValue == null))
+                {
+                    Trace.WriteLine("'RequestFieldDataList' Property has failed validation.");
 
-                return false;
-            }
-
-            if ((ConnectionData.Server == null) || (ConnectionData.Server.Length == 0))
-            {
-                Trace.WriteLine("'ConnectionData.Server' has failed validation.");
-
-                return false;
-            }
-
-            if ((ConnectionData.UserName == null) || (ConnectionData.UserName.Length == 0))
-            {
-                Trace.WriteLine("'ConnectionData.UserName' has failed validation.");
-
-                return false;
-            }
-
-            if (MaximumRecordsToReturn < 0)
-            { 
-                Trace.WriteLine("MaximumRecordsToReturn is out of range.");
-
-                return false;
-            }
-
-            if (MaximumWaitTime <= 0)
-            { 
-                Trace.WriteLine("MaximumWaitTime is out of range.");
-
-                return false;
+                    return false;
+                }
             }
 
             return true;

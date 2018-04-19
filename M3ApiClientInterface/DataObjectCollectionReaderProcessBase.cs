@@ -1,6 +1,7 @@
 ﻿using Lawson.M3.MvxSock;
 using System;
 using System.Diagnostics;
+using System.Reflection;
 
 
 namespace M3ApiClientInterface
@@ -59,6 +60,8 @@ namespace M3ApiClientInterface
             catch (Exception exception)
             { Trace.WriteLine(exception); }
 
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
+
             return false;
         }
 
@@ -75,9 +78,9 @@ namespace M3ApiClientInterface
 
                     ReturnCode = MvxSock.Access(ref serverId, null);
 
-                    if (ReturnCode != 0)
+                    if (ReturnCode.Value != 0)
                     {
-                        Trace.WriteLine("The 'MvxSock.Access' method retured the following non zero code.  " + ReturnCode);
+                        Trace.WriteLine(String.Format("The 'MvxSock.Access' method retured the following non zero code.  {0}", ReturnCode));
 
                         String errorText = GetErrorText();
 
@@ -91,6 +94,8 @@ namespace M3ApiClientInterface
             }
             catch (Exception exception)
             { Trace.WriteLine(exception); }
+
+            TraceUtilities.WriteMethodError(MethodBase.GetCurrentMethod());
 
             return false;
         }
