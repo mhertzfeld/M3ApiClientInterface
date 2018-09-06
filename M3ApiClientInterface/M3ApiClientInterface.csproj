@@ -86,6 +86,7 @@
   <ItemGroup>
     <Compile Include="ApiData.cs" />
     <Compile Include="ConnectionData.cs" />
+    <Compile Include="DataConverter.cs" />
     <Compile Include="DataObjectCollectionReaderInterface.cs" />
     <Compile Include="DataObjectCollectionReaderProcess.cs" />
     <Compile Include="DataObjectInterface.cs" />
